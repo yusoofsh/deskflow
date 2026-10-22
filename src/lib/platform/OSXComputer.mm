@@ -624,10 +624,9 @@ void OSXComputer::fakeMouseRelativeMove(int32_t dx, int32_t dy) const
 
 void OSXComputer::fakeMouseWheel(ScrollDelta delta) const
 {
+  // post whole lines, the fraction of a line is kept for the next delta
+  delta = applyScrollModifierInSteps(delta, s_scrollDelta);
   if (delta.x != 0 || delta.y != 0) {
-    delta = applyScrollModifier(
-        {static_cast<int32_t>(delta.x / s_scrollDelta), static_cast<int32_t>(delta.y / s_scrollDelta)}
-    );
     // create a scroll event, post it and release it.  not sure if kCGScrollEventUnitLine
     // is the right choice here over kCGScrollEventUnitPixel
     CGEventRef scrollEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitLine, 2, delta.y, delta.x);

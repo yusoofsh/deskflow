@@ -52,7 +52,8 @@ public:
 
   /**
    * @brief Synthesize a mouse wheel event of amount
-   * This Implmentation for this method should call `applyScrollModifier` before sending the final delta to the system
+   * This Implmentation for this method should call `applyScrollModifier`, or `applyScrollModifierInSteps` when the
+   * system only takes whole steps, before sending the final delta to the system
    * @param delta the raw delta to fake
    */
   virtual void fakeMouseWheel(ScrollDelta delta) const = 0;
@@ -67,6 +68,26 @@ public:
   {
     delta.y = static_cast<int32_t>(m_invertYScroll ? delta.y * -m_yScrollScale : delta.y * m_yScrollScale);
     delta.x = static_cast<int32_t>(m_invertXScroll ? delta.x * -m_xScrollScale : delta.x * m_xScrollScale);
+    return delta;
+  }
+
+  /**
+   * @brief Applies any scroll modifiers to the provided delta and converts it to whole steps of \p stepSize,
+   * keeping the fraction of a step that is left over for the next call. Deltas smaller than a step, as sent by
+   * high resolution wheels and precision touchpads, then add up to a step instead of being dropped.
+   * This should only be done inside the subclasses fakeMouseWheel impl
+   * @param delta the raw delta to convert
+   * @param stepSize the delta of one whole step
+   * @return the whole steps with inversion and scale applied
+   */
+  ScrollDelta applyScrollModifierInSteps(ScrollDelta delta, int32_t stepSize) const
+  {
+    m_yScrollRemainder += (m_invertYScroll ? -m_yScrollScale : m_yScrollScale) * delta.y / stepSize;
+    m_xScrollRemainder += (m_invertXScroll ? -m_xScrollScale : m_xScrollScale) * delta.x / stepSize;
+    delta.y = static_cast<int32_t>(m_yScrollRemainder);
+    delta.x = static_cast<int32_t>(m_xScrollRemainder);
+    m_yScrollRemainder -= delta.y;
+    m_xScrollRemainder -= delta.x;
     return delta;
   }
 
@@ -94,5 +115,17 @@ private:
    * It is used in the applyScrollModifier method
    */
   double m_xScrollScale = 1.0;
+
+  /**
+   * @brief the fraction of a vertical scroll step not sent yet.
+   * It is used in the applyScrollModifierInSteps method
+   */
+  mutable double m_yScrollRemainder = 0.0;
+
+  /**
+   * @brief the fraction of a horizontal scroll step not sent yet.
+   * It is used in the applyScrollModifierInSteps method
+   */
+  mutable double m_xScrollRemainder = 0.0;
   //@}
 };
