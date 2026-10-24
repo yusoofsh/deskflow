@@ -73,16 +73,6 @@ Entry entryFor(int top, const QFileInfo &info, const QString &relativePath)
 
 } // namespace
 
-std::string encodePaths(const QStringList &paths)
-{
-  return paths.join(QLatin1Char('\n')).toStdString();
-}
-
-QStringList decodePaths(const std::string &data)
-{
-  return QString::fromStdString(data).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
-}
-
 std::string encodeEntry(const Entry &entry)
 {
   const QStringList fields = {

@@ -33,11 +33,19 @@ struct Entry
   QString sourcePath;
 };
 
+// inline so platform code can use them without linking the app library, which Windows doesn't
+
 //! Encodes absolute local paths as UTF-8, one per line
-std::string encodePaths(const QStringList &paths);
+inline std::string encodePaths(const QStringList &paths)
+{
+  return paths.join(QLatin1Char('\n')).toStdString();
+}
 
 //! Decodes paths written by encodePaths, skipping empty lines
-QStringList decodePaths(const std::string &data);
+inline QStringList decodePaths(const std::string &data)
+{
+  return QString::fromStdString(data).split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+}
 
 //! Encodes an entry header without its source path
 std::string encodeEntry(const Entry &entry);
