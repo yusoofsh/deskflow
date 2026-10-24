@@ -38,6 +38,7 @@ class Mutex;
 class Thread;
 class OSXKeyState;
 class OSXScreenSaver;
+class OSXScrollSmoother;
 class IEventQueue;
 class Mutex;
 
@@ -236,6 +237,9 @@ private:
   // mouse state
   mutable int32_t m_xCursor, m_yCursor;
   mutable bool m_cursorPosValid;
+
+  // paces wheel deltas into trackpad style scroll gestures
+  std::unique_ptr<OSXScrollSmoother> m_scrollSmoother;
 
   // mouse event number (needed for macOS 27)
   uint32_t m_mouseEventNumber = 0;
