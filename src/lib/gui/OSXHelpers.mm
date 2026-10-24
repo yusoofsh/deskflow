@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
+#import <ServiceManagement/ServiceManagement.h>
 #import <UserNotifications/UNNotification.h>
 #import <UserNotifications/UNNotificationContent.h>
 #import <UserNotifications/UNNotificationTrigger.h>
@@ -113,6 +114,22 @@ void macOSNativeHide()
 {
   [NSApp hide:nil];
   [[NSApplication sharedApplication] setActivationPolicy:NSApplicationActivationPolicyAccessory];
+}
+
+void setLaunchAtLogin(bool enabled)
+{
+  if (@available(macOS 13.0, *)) {
+    SMAppService *service = [SMAppService mainAppService];
+    NSError *error = nil;
+    if (enabled) {
+      // only register when not registered, so a login item turned off in System Settings stays off
+      if (service.status == SMAppServiceStatusNotRegistered && ![service registerAndReturnError:&error]) {
+        qWarning("failed to add login item: %s", error.localizedDescription.UTF8String);
+      }
+    } else if (service.status != SMAppServiceStatusNotRegistered && ![service unregisterAndReturnError:&error]) {
+      qWarning("failed to remove login item: %s", error.localizedDescription.UTF8String);
+    }
+  }
 }
 
 static NSApplicationTerminateReply deskflow_applicationShouldTerminate(id self, SEL _cmd, NSApplication *sender)
