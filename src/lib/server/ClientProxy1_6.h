@@ -9,8 +9,11 @@
 #include "deskflow/ClipboardChunk.h"
 #include "server/ClientProxy1_5.h"
 
+#include <memory>
 #include <string>
 
+class FileTransfer;
+class PacedStreamWriter;
 class Server;
 class IEventQueue;
 
@@ -24,8 +27,16 @@ public:
   void setClipboard(ClipboardID id, const IClipboard *clipboard) override;
   bool recvClipboard() override;
 
+protected:
+  bool parseMessage(const uint8_t *code) override;
+
 private:
+  void notifyClipboardChanged(ClipboardID id, uint32_t sequence);
+
   IEventQueue *m_events;
   std::string m_clipboardDataCached;
   ClipboardChunkAssemblyState m_clipboardChunkState;
+  std::unique_ptr<PacedStreamWriter> m_writer;
+  // declared after m_writer, which it uses, so it is destroyed first
+  std::unique_ptr<FileTransfer> m_files;
 };

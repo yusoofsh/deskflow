@@ -39,6 +39,11 @@ public:
 private:
   void clearConverters();
 
+  // files are one pasteboard item each, so they don't fit the one item converters
+  bool hasFiles() const;
+  std::string getFiles() const;
+  void addFiles(const std::string &data);
+
 private:
   using ConverterList = std::vector<IOSXClipboardConverter *>;
 

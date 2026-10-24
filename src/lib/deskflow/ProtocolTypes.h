@@ -1095,6 +1095,61 @@ extern const char *const kMsgDFileTransfer;
  */
 extern const char *const kMsgDDragInfo;
 
+/**
+ * @brief Request for copied files
+ *
+ * **Message Code**: `"DFRQ"`
+ * **Direction**: Primary ↔ Secondary
+ * **Format**: `"DFRQ%4i%s"`
+ * **Parameters**:
+ * - `$1`: Transfer id (4 bytes), chosen by the requester
+ * - `$2`: Paths from the other computer's Files clipboard, one per line
+ *
+ * Sent by a computer that received a clipboard with files. The other
+ * computer answers with kMsgDFileData messages, and only sends paths it
+ * put on its own clipboard. Only sent to peers that sent a Files clipboard,
+ * so older peers never receive it.
+ *
+ * @see kMsgDFileData, kMsgDFileCancel
+ */
+extern const char *const kMsgDFileRequest;
+
+/**
+ * @brief Copied file data
+ *
+ * **Message Code**: `"DFDT"`
+ * **Direction**: Primary ↔ Secondary
+ * **Format**: `"DFDT%4i%1i%s"`
+ * **Parameters**:
+ * - `$1`: Transfer id (4 bytes) from kMsgDFileRequest
+ * - `$2`: Mark (1 byte): 1 entry, 2 data, 3 done, 4 error
+ * - `$3`: Entry header, file content, nothing, or an error message
+ *
+ * An entry header is tab separated: item index, `f` or `d`, size, modified
+ * time in seconds since the epoch, and the path relative to the copied
+ * item's parent with `/` separators. Data messages for a file follow its
+ * entry until its size is reached.
+ *
+ * @see kMsgDFileRequest
+ */
+extern const char *const kMsgDFileData;
+
+/**
+ * @brief Cancel a file request
+ *
+ * **Message Code**: `"DFCN"`
+ * **Direction**: Primary ↔ Secondary
+ * **Format**: `"DFCN%4i"`
+ * **Parameters**:
+ * - `$1`: Transfer id (4 bytes) from kMsgDFileRequest
+ *
+ * Sent when the requester no longer wants the files, for example because
+ * something new was copied.
+ *
+ * @see kMsgDFileRequest
+ */
+extern const char *const kMsgDFileCancel;
+
 /** @} */ // end of protocol_files group
 
 /**

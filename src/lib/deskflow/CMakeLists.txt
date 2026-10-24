@@ -45,6 +45,10 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   DisplayException.cpp
   DisplayException.h
   DisplayInvalidException.h
+  FileClipboard.cpp
+  FileClipboard.h
+  FileTransfer.cpp
+  FileTransfer.h
   IApp.h
   IClient.h
   IClipboard.cpp
@@ -65,6 +69,8 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   KeyState.h
   MouseTypes.h
   OptionTypes.h
+  PacedStreamWriter.cpp
+  PacedStreamWriter.h
   PacketStreamFilter.cpp
   PacketStreamFilter.h
   PlatformComputer.cpp
