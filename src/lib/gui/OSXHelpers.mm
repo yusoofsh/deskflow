@@ -120,15 +120,22 @@ void setLaunchAtLogin(bool enabled)
 {
   if (@available(macOS 13.0, *)) {
     SMAppService *service = [SMAppService mainAppService];
+    // an app that never registered can report not found rather than not registered
+    const bool isOn = service.status == SMAppServiceStatusEnabled;
+    const bool isTurnedOffByUser = service.status == SMAppServiceStatusRequiresApproval;
     NSError *error = nil;
     if (enabled) {
-      // only register when not registered, so a login item turned off in System Settings stays off
-      if (service.status == SMAppServiceStatusNotRegistered && ![service registerAndReturnError:&error]) {
+      // leave a login item the user turned off in System Settings off
+      if (!isOn && !isTurnedOffByUser && ![service registerAndReturnError:&error]) {
         qWarning("failed to add login item: %s", error.localizedDescription.UTF8String);
       }
-    } else if (service.status != SMAppServiceStatusNotRegistered && ![service unregisterAndReturnError:&error]) {
+    } else if ((isOn || isTurnedOffByUser) && ![service unregisterAndReturnError:&error]) {
       qWarning("failed to remove login item: %s", error.localizedDescription.UTF8String);
     }
+    qInfo(
+        "login item status: %ld (0 not registered, 1 on, 2 off in System Settings, 3 not found)",
+        static_cast<long>(service.status)
+    );
   }
 }
 
