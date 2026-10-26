@@ -463,6 +463,8 @@ void Config::read(ConfigReadContext &context)
   while (context.getStream()) {
     tmp.readSection(context);
   }
+  // only a setting, so it applies even to files without an options section
+  tmp.addOption("", kOptionTouchpadGestures, Settings::value(Settings::Server::TouchpadGestures).toBool());
   *this = tmp;
 }
 
@@ -554,7 +556,6 @@ void Config::readSectionOptions(ConfigReadContext &s)
   addOption("", kOptionWin32KeepForeground, Settings::value(Settings::Server::Win32KeepForeground).toBool());
   addOption("", kOptionClipboardSharing, Settings::value(Settings::Server::EnableClipboard).toBool());
   addOption("", kOptionClipboardSharingSize, Settings::value(Settings::Server::ClipboardSize).toUInt() * 1024);
-  addOption("", kOptionTouchpadGestures, Settings::value(Settings::Server::TouchpadGestures).toBool());
 
   if (const auto address = Settings::value(Settings::Core::Interface).toString(); !address.isEmpty()) {
     m_deskflowAddress = NetworkAddress(address.toStdString(), Settings::value(Settings::Core::Port).toInt());
