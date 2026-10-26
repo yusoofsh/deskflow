@@ -56,7 +56,8 @@ private:
     std::vector<Finger> fingers;
     // touchpad height in touchpad widths
     double height = 1.0;
-    std::vector<USAGE> usages;
+    // buffer for the pressed buttons of a report, HID usages are USHORT
+    std::vector<USHORT> usages;
   };
 
   static std::optional<Device> parseDevice(HANDLE handle);
