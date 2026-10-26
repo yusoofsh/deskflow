@@ -7,7 +7,7 @@ name: Personal build
 
 on:
   push:
-    branches: [personal]
+    branches: [personal, gestures]
   workflow_dispatch:
 
 jobs:
@@ -46,11 +46,11 @@ jobs:
         shell: bash
         run: cmake --build build --config Release -j8 --target package
 
-      - name: Clipboard and file transfer tests
+      - name: Clipboard, file transfer and touchpad gesture tests
         shell: bash
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --test-dir build/src/unittests -R "Clipboard|FileTransfer" --output-on-failure
+        run: ctest --test-dir build/src/unittests -R "Clipboard|FileTransfer|TouchpadGesture" --output-on-failure
 
       - name: Upload
         uses: actions/upload-artifact@v7

@@ -39,6 +39,7 @@ class Thread;
 class OSXKeyState;
 class OSXScreenSaver;
 class OSXScrollSmoother;
+class OSXDockSwipe;
 class IEventQueue;
 class Mutex;
 
@@ -78,6 +79,8 @@ public:
   void fakeMouseMove(int32_t x, int32_t y) override;
   void fakeMouseRelativeMove(int32_t dx, int32_t dy) const override;
   void fakeMouseWheel(ScrollDelta delta) const override;
+  bool canFakeTouchpadGestures() const override;
+  void fakeTouchpadGesture(const TouchpadGesture &gesture) override;
 
   // IPlatformComputer overrides
   void enable() override;
@@ -240,6 +243,9 @@ private:
 
   // paces wheel deltas into trackpad style scroll gestures
   std::unique_ptr<OSXScrollSmoother> m_scrollSmoother;
+
+  // replays touchpad swipes from the server
+  std::unique_ptr<OSXDockSwipe> m_dockSwipe;
 
   // mouse event number (needed for macOS 27)
   uint32_t m_mouseEventNumber = 0;

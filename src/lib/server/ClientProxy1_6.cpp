@@ -16,6 +16,8 @@
 #include "io/IStream.h"
 #include "server/Server.h"
 
+#include <cstring>
+
 //
 // ClientProxy1_6
 //
@@ -104,8 +106,25 @@ bool ClientProxy1_6::recvClipboard()
   return true;
 }
 
+void ClientProxy1_6::touchpadGesture(const TouchpadGesture &gesture)
+{
+  LOG_VERBOSE(
+      "send touchpad gesture to \"%s\" phase=%d fingers=%d %+d,%+d", getName().c_str(), static_cast<int>(gesture.phase),
+      gesture.fingers, gesture.dx, gesture.dy
+  );
+  ProtocolUtil::writef(
+      getStream(), kMsgDTouchpadGesture, static_cast<int32_t>(gesture.phase), static_cast<int32_t>(gesture.fingers),
+      static_cast<int32_t>(gesture.dx), static_cast<int32_t>(gesture.dy)
+  );
+}
+
 bool ClientProxy1_6::parseMessage(const uint8_t *code)
 {
+  if (memcmp(code, kMsgCTouchpadGestures, 4) == 0) {
+    LOG_DEBUG("client \"%s\" replays touchpad gestures", getName().c_str());
+    m_acceptsTouchpadGestures = true;
+    return true;
+  }
   return m_files->handleMessage(code) || ClientProxy1_5::parseMessage(code);
 }
 

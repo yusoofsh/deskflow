@@ -6,6 +6,7 @@
  */
 
 #include "CoreProcess.h"
+#include "TouchpadSwipeSettings.h"
 
 #include "common/ExitCodes.h"
 #include "gui/ipc/CoreIpcClient.h"
@@ -121,6 +122,9 @@ CoreProcess::CoreProcess(const ServerConfig &serverConfig)
       qDebug("retry cancelled, process state is not retry pending");
     }
   });
+
+  // turned off when the gui last quit without turning them back on
+  touchpadSwipeSettings::restore();
 }
 
 void CoreProcess::onProcessReadyReadStandardOutput()
@@ -472,12 +476,15 @@ void CoreProcess::start(std::optional<ProcessMode> processModeOption)
           );
           connect(m_coreIpcClient, &ipc::CoreIpcClient::connected, this, [] {
             qDebug("connected to core ipc server");
+            // a new core keeps swipes on this computer until the cursor goes to a client
+            touchpadSwipeSettings::restore();
           });
           connect(m_coreIpcClient, &ipc::CoreIpcClient::connectionFailed, this, [] {
             qWarning("failed to establish core ipc connection");
           });
           connect(m_coreIpcClient, &ipc::CoreIpcClient::serverShutdown, this, [this, client = m_coreIpcClient] {
             qDebug("core ipc server shut down cleanly");
+            touchpadSwipeSettings::restore();
             client->deleteLater();
             if (m_coreIpcClient == client)
               m_coreIpcClient = nullptr;
@@ -575,6 +582,8 @@ void CoreProcess::cleanup()
 {
   qInfo("cleaning up core process");
 
+  touchpadSwipeSettings::restore();
+
   const auto isDesktop = Settings::value(Settings::Core::ProcessMode).value<ProcessMode>() == ProcessMode::Desktop;
   const auto isRunning = m_processState == ProcessState::Started;
   if (isDesktop && isRunning) {
@@ -621,6 +630,9 @@ void CoreProcess::setProcessState(ProcessState state)
       qPrintable(processStateToString(m_processState)), qPrintable(processStateToString(state))
   );
   m_processState = state;
+  if (state != ProcessState::Started) {
+    touchpadSwipeSettings::restore();
+  }
   Q_EMIT processStateChanged(state);
 }
 
@@ -662,6 +674,12 @@ void CoreProcess::onCoreIpcMessageReceived(const QString &command, const QString
     Q_EMIT peerFingerprint(args);
   } else if (command == "missingKeyboardLayouts") {
     Q_EMIT missingKeyboardLayouts(args);
+  } else if (command == "touchpadGestures") {
+    if (args == "forward") {
+      touchpadSwipeSettings::turnOff();
+    } else {
+      touchpadSwipeSettings::restore();
+    }
   }
 }
 

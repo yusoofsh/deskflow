@@ -10,7 +10,7 @@ macro(configure_libs)
   elseif(WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /O2 /Ob2")
-    list(APPEND libs Wtsapi32 Userenv Wininet comsuppw Shlwapi version)
+    list(APPEND libs Wtsapi32 Userenv Wininet comsuppw Shlwapi version hid)
     add_definitions(
       /DWIN32
       /D_WINDOWS

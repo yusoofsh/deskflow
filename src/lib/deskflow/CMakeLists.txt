@@ -83,6 +83,9 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   ServerApp.h
   StreamChunker.cpp
   StreamChunker.h
+  TouchpadGesture.h
+  TouchpadGestureTracker.cpp
+  TouchpadGestureTracker.h
   KeyboardLayoutManager.cpp
   KeyboardLayoutManager.h
   ipc/IpcServer.cpp

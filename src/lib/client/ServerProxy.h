@@ -106,6 +106,7 @@ private:
   void mouseMove();
   void mouseRelativeMove();
   void mouseWheel();
+  void touchpadGesture();
   void screensaver();
   void resetOptions();
   void setOptions();

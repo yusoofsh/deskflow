@@ -26,6 +26,12 @@ public:
 
   void setClipboard(ClipboardID id, const IClipboard *clipboard) override;
   bool recvClipboard() override;
+  void touchpadGesture(const TouchpadGesture &gesture) override;
+
+  bool acceptsTouchpadGestures() const override
+  {
+    return m_acceptsTouchpadGestures;
+  }
 
 protected:
   bool parseMessage(const uint8_t *code) override;
@@ -36,6 +42,7 @@ private:
   IEventQueue *m_events;
   std::string m_clipboardDataCached;
   ClipboardChunkAssemblyState m_clipboardChunkState;
+  bool m_acceptsTouchpadGestures = false;
   std::unique_ptr<PacedStreamWriter> m_writer;
   // declared after m_writer, which it uses, so it is destroyed first
   std::unique_ptr<FileTransfer> m_files;

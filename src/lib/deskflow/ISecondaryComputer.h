@@ -11,6 +11,7 @@
 #include "common/Coordinate.h"
 #include "common/Settings.h"
 #include "deskflow/MouseTypes.h"
+#include "deskflow/TouchpadGesture.h"
 
 //! Secondary comptuer interface
 /*!
@@ -56,6 +57,18 @@ public:
    * @param delta the raw delta to fake
    */
   virtual void fakeMouseWheel(ScrollDelta delta) const = 0;
+
+  //! Test if touchpad swipes can be replayed
+  virtual bool canFakeTouchpadGestures() const
+  {
+    return false;
+  }
+
+  //! Replay a three or four finger touchpad swipe as this computer's own
+  virtual void fakeTouchpadGesture(const TouchpadGesture &)
+  {
+    // do nothing
+  }
 
   /**
    * @brief Applies any scroll modfifers to the provided delta, This should only be done inside the subclasses

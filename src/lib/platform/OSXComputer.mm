@@ -27,6 +27,7 @@
 #include "mt/Mutex.h"
 #include "mt/Thread.h"
 #include "platform/OSXClipboard.h"
+#include "platform/OSXDockSwipe.h"
 #include "platform/OSXEventQueueBuffer.h"
 #include "platform/OSXKeyState.h"
 #include "platform/OSXMediaKeySupport.h"
@@ -355,6 +356,9 @@ OSXComputer::OSXComputer(IEventQueue *events, bool isPrimary, bool enableLangSyn
   });
 
   m_scrollSmoother = std::make_unique<OSXScrollSmoother>();
+  if (!m_isPrimary) {
+    m_dockSwipe = std::make_unique<OSXDockSwipe>();
+  }
 
   // install the platform event queue
   m_events->adoptBuffer(new OSXEventQueueBuffer(m_events));
@@ -816,6 +820,18 @@ void OSXComputer::fakeMouseWheel(ScrollDelta delta) const
   );
 }
 
+bool OSXComputer::canFakeTouchpadGestures() const
+{
+  return m_dockSwipe != nullptr && m_dockSwipe->isAvailable();
+}
+
+void OSXComputer::fakeTouchpadGesture(const TouchpadGesture &gesture)
+{
+  if (m_dockSwipe != nullptr) {
+    m_dockSwipe->handle(gesture);
+  }
+}
+
 void OSXComputer::showCursor()
 {
   LOG_DEBUG("showing cursor");
@@ -1002,6 +1018,8 @@ void OSXComputer::leave()
     // a client (onMouseMove reads raw deltas instead). must follow hideCursor(),
     // which re-associates. re-coupled in enter()/disable().
     CGAssociateMouseAndMouseCursorPosition(false);
+  } else if (m_dockSwipe != nullptr) {
+    m_dockSwipe->cancel();
   }
 
   // now off computer

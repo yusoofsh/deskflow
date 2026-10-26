@@ -239,6 +239,10 @@ ServerProxy::ConnectionResult ServerProxy::parseMessage(const uint8_t *code)
     mouseWheel();
   }
 
+  else if (memcmp(code, kMsgDTouchpadGesture, 4) == 0) {
+    touchpadGesture();
+  }
+
   else if (memcmp(code, kMsgDKeyDown1_1, 4) == 0) {
     uint16_t id = 0;
     uint16_t mask = 0;
@@ -757,6 +761,30 @@ void ServerProxy::mouseWheel()
   m_client->mouseWheel(xDelta, yDelta);
 }
 
+void ServerProxy::touchpadGesture()
+{
+  flushCompressedMouse();
+
+  uint8_t phase;
+  uint8_t fingers;
+  int16_t dx;
+  int16_t dy;
+  ProtocolUtil::readf(m_stream, kMsgDTouchpadGesture + 4, &phase, &fingers, &dx, &dy);
+  LOG_VERBOSE("recv touchpad gesture phase=%d fingers=%d %+d,%+d", phase, fingers, dx, dy);
+
+  using enum TouchpadGesture::Phase;
+  if (phase < static_cast<uint8_t>(Begin) || phase > static_cast<uint8_t>(Cancel)) {
+    return;
+  }
+
+  TouchpadGesture gesture;
+  gesture.phase = static_cast<TouchpadGesture::Phase>(phase);
+  gesture.fingers = fingers;
+  gesture.dx = dx;
+  gesture.dy = dy;
+  m_client->touchpadGesture(gesture);
+}
+
 void ServerProxy::screensaver()
 {
   // parse
@@ -818,6 +846,9 @@ void ServerProxy::setOptions()
     } else if (options[i] == kOptionHeartbeat) {
       // update keep alive
       setKeepAliveRate(1.0e-3 * static_cast<double>(options[i + 1]));
+    } else if (options[i] == kOptionTouchpadGestures && options[i + 1] != 0 && m_client->canReplayTouchpadGestures()) {
+      LOG_DEBUG("server forwards touchpad gestures, replaying them here");
+      ProtocolUtil::writef(m_stream, kMsgCTouchpadGestures);
     }
 
     if (id != kKeyModifierIDNull) {

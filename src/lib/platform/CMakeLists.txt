@@ -59,6 +59,8 @@ if(WIN32)
     MSWindowsScreenSaver.h
     MSWindowsSession.cpp
     MSWindowsSession.h
+    MSWindowsTouchpad.cpp
+    MSWindowsTouchpad.h
     MSWindowsWatchdog.cpp
     MSWindowsWatchdog.h
   )
@@ -87,6 +89,8 @@ elseif(APPLE)
     OSXCocoaApp.m
     OSXComputer.h
     OSXComputer.mm
+    OSXDockSwipe.h
+    OSXDockSwipe.mm
     OSXEventQueueBuffer.cpp
     OSXEventQueueBuffer.h
     OSXKeyLayoutResource.cpp

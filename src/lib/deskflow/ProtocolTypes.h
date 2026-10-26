@@ -899,6 +899,42 @@ extern const char *const kMsgDMouseWheel;
  */
 extern const char *const kMsgDMouseWheel1_0;
 
+/**
+ * @brief Touchpad swipe
+ *
+ * **Message Code**: `"DTPG"`
+ * **Direction**: Primary → Secondary
+ * **Format**: `"DTPG%1i%1i%2i%2i"`
+ * **Parameters**:
+ * - `$1`: Phase (1 byte): 1 begin, 2 update, 3 end, 4 cancel
+ * - `$2`: Fingers (1 byte): 3 or 4
+ * - `$3`: X movement since the previous message (2 bytes, signed), positive to the right
+ * - `$4`: Y movement since the previous message (2 bytes, signed), positive towards the user
+ *
+ * A three or four finger swipe on the primary computer's touchpad, replayed
+ * as the secondary computer's own swipe. Movement is in 1/10000 of the
+ * touchpad width on both axes. Only sent to secondaries that answered
+ * kOptionTouchpadGestures with kMsgCTouchpadGestures, so older ones never
+ * receive it.
+ *
+ * @see kMsgCTouchpadGestures
+ */
+extern const char *const kMsgDTouchpadGesture;
+
+/**
+ * @brief Secondary can replay touchpad swipes
+ *
+ * **Message Code**: `"CTPG"`
+ * **Direction**: Secondary → Primary
+ * **Format**: `"CTPG"`
+ *
+ * Sent in answer to kOptionTouchpadGestures by secondaries that can replay
+ * kMsgDTouchpadGesture. Only primaries that set the option receive it.
+ *
+ * @see kMsgDTouchpadGesture
+ */
+extern const char *const kMsgCTouchpadGestures;
+
 /** @} */ // end of protocol_mouse group
 
 /**

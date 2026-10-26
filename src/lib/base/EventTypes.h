@@ -184,6 +184,10 @@ enum class EventTypes : uint32_t
   /// This event is sent when mouse wheel is rotated. Event data is a pointer to WheelInfo.
   PrimaryComputerWheel,
 
+  /// This event is sent for a touchpad swipe while the cursor is on a client. Event data is a pointer to
+  /// TouchpadGesture.
+  PrimaryComputerTouchpadGesture,
+
   /// This event is sent when screensaver is activated.
   PrimaryScreenSaverActivated,
 

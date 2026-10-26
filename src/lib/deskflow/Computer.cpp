@@ -270,6 +270,17 @@ void Computer::mouseWheel(int32_t xDelta, int32_t yDelta) const
   m_computer->fakeMouseWheel({xDelta, yDelta});
 }
 
+void Computer::touchpadGesture(const TouchpadGesture &gesture) const
+{
+  assert(!m_isPrimary);
+  m_computer->fakeTouchpadGesture(gesture);
+}
+
+bool Computer::canReplayTouchpadGestures() const
+{
+  return !m_isPrimary && m_computer->canFakeTouchpadGestures();
+}
+
 void Computer::resetOptions()
 {
   // reset options

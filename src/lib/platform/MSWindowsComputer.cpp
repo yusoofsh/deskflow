@@ -27,6 +27,7 @@
 #include "platform/MSWindowsEventQueueBuffer.h"
 #include "platform/MSWindowsKeyState.h"
 #include "platform/MSWindowsScreenSaver.h"
+#include "platform/MSWindowsTouchpad.h"
 
 #include <Shlobj.h>
 #include <algorithm>
@@ -110,6 +111,9 @@ MSWindowsComputer::MSWindowsComputer(bool isPrimary, bool useHooks, IEventQueue 
     updateComputerShape();
     m_class = createWindowClass();
     m_window = createWindow(m_class, kAppNameW);
+    if (m_isPrimary) {
+      m_touchpad = std::make_unique<MSWindowsTouchpad>(m_window);
+    }
     setupMouseKeys();
     LOG_DEBUG("computer shape: %d,%d %dx%d %s", m_x, m_y, m_w, m_h, m_multimon ? "(multi-monitor)" : "");
     LOG_DEBUG("window is 0x%08x", m_window);
@@ -150,6 +154,7 @@ MSWindowsComputer::~MSWindowsComputer()
   delete m_keyState;
   delete m_desks;
   delete m_screensaver;
+  m_touchpad.reset();
   destroyWindow(m_window);
   destroyClass(m_class);
 
@@ -950,6 +955,15 @@ bool MSWindowsComputer::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LR
   case WM_DISPLAYCHANGE:
     return onDisplayChange();
 
+  case WM_INPUT:
+    if (m_touchpad != nullptr) {
+      for (const auto &gesture : m_touchpad->onRawInput(reinterpret_cast<HRAWINPUT>(lParam), !m_isOnComputer)) {
+        onTouchpadGesture(gesture);
+      }
+    }
+    // not handled, DefWindowProc frees the raw input
+    break;
+
   /* On windows 10 we don't receive WM_POWERBROADCAST after sleep.
    We receive only WM_TIMECHANGE hence this message is used to resume.*/
   case WM_TIMECHANGE:
@@ -1281,6 +1295,20 @@ bool MSWindowsComputer::onMouseWheel(int32_t xDelta, int32_t yDelta)
     sendEvent(EventTypes::PrimaryComputerWheel, WheelInfo::alloc(xDelta, yDelta));
   }
   return true;
+}
+
+void MSWindowsComputer::onTouchpadGesture(const TouchpadGesture &gesture)
+{
+  if (gesture.phase != TouchpadGesture::Phase::Update) {
+    LOG_DEBUG("event: touchpad swipe phase=%d fingers=%d", static_cast<int>(gesture.phase), gesture.fingers);
+  }
+  auto *data = static_cast<TouchpadGesture *>(malloc(sizeof(TouchpadGesture)));
+  if (data == nullptr) {
+    LOG_ERR("out of memory for a touchpad swipe");
+    return;
+  }
+  *data = gesture;
+  sendEvent(EventTypes::PrimaryComputerTouchpadGesture, data);
 }
 
 bool MSWindowsComputer::onScreensaver(bool activated)

@@ -51,6 +51,16 @@ public:
     return false;
   }
 
+  //! Test if the client replays touchpad swipes
+  /*!
+  Return true once the client said it can replay touchpad swipes sent with
+  touchpadGesture().
+  */
+  virtual bool acceptsTouchpadGestures() const
+  {
+    return false;
+  }
+
   //@}
 
   // IComputer

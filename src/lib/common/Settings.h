@@ -86,6 +86,7 @@ public:
     inline static const auto ShowVersionInTitle = QStringLiteral("gui/showVersionInTitle");
     inline static const auto IgnoreMissingKeyboardLayouts = QStringLiteral("gui/ignoreMissingKeyboardLayouts");
     inline static const auto LaunchAtLogin = QStringLiteral("gui/launchAtLogin");
+    inline static const auto TouchpadGestureBackup = QStringLiteral("gui/touchpadGestureBackup");
   };
   struct Log
   {
@@ -119,6 +120,7 @@ public:
     inline static const auto RelativeMouseMoves = QStringLiteral("server/relativeMouseMoves");
     inline static const auto SwitchDelay = QStringLiteral("server/switchDelay");
     inline static const auto SwitchDoubleTap = QStringLiteral("server/switchDoubleTap");
+    inline static const auto TouchpadGestures = QStringLiteral("server/touchpadGestures");
     inline static const auto Win32KeepForeground = QStringLiteral("server/win32KeepForeground");
     inline static const auto XdpClipboardRetried = QStringLiteral("server/xdpClipboardRetried");
     inline static const auto XdpRestoreToken = QStringLiteral("server/xdpRestoreToken");
@@ -336,6 +338,7 @@ private:
     , Server::RelativeMouseMoves
     , Server::SwitchDelay
     , Server::SwitchDoubleTap
+    , Server::TouchpadGestures
     , Server::Win32KeepForeground
   };
 
@@ -378,12 +381,14 @@ private:
     , Security::TlsEnabled
     , Security::CheckPeers
     , Server::EnableClipboard
+    , Server::TouchpadGestures
     , Server::Win32KeepForeground
   };
 
   // Settings saved in our State file
   inline static const QStringList m_stateKeys = {
       Gui::WindowGeometry
+    , Gui::TouchpadGestureBackup
     , Client::XdpClipboardRetried
     , Client::XdpRestoreToken
     , Server::XdpClipboardRetried
