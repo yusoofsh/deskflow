@@ -724,6 +724,11 @@ void OSXKeyState::getKeyMapForSpecialKeys(deskflow::KeyMap &keyMap, int32_t grou
   deskflow::KeyMap::KeyItem item;
   for (size_t i = 0; i < sizeof(s_controlKeys) / sizeof(s_controlKeys[0]); ++i) {
     const KeyEntry &entry = s_controlKeys[i];
+    // brightness keys go out as media key events, like the ones Apple keyboards
+    // send, so display apps such as BetterDisplay pick them up
+    if (entry.m_keyID == kKeyBrightnessUp || entry.m_keyID == kKeyBrightnessDown) {
+      continue;
+    }
     item.m_id = entry.m_keyID;
     item.m_group = group;
     item.m_button = mapVirtualKeyToKeyButton(entry.m_virtualKey);

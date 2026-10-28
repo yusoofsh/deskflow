@@ -25,6 +25,8 @@ endif()
 if(WIN32)
   set(PLATFORM_SOURCES
     IMSWindowsClipboardFacade.h
+    MSWindowsBrightness.cpp
+    MSWindowsBrightness.h
     MSWindowsClipboard.cpp
     MSWindowsClipboard.h
     MSWindowsClipboardAnyTextConverter.cpp
