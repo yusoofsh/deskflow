@@ -1293,6 +1293,10 @@ Enabling this setting will disable the server config GUI.</source>
         <source>Remove all settings</source>
         <translation>すべての設定を消去する</translation>
     </message>
+    <message>
+        <source>Start Deskflow when you log in</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsDialogButtonBox</name>

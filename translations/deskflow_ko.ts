@@ -1291,6 +1291,10 @@ Enabling this setting will disable the server config GUI.</source>
         <source>Remove all settings</source>
         <translation type="unfinished">모든 설정 제거</translation>
     </message>
+    <message>
+        <source>Start Deskflow when you log in</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsDialogButtonBox</name>
