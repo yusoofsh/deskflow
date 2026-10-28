@@ -29,6 +29,8 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   App.h
   AppUtil.cpp
   AppUtil.h
+  BrightnessKeyTracker.cpp
+  BrightnessKeyTracker.h
   Chunk.cpp
   Chunk.h
   ClientApp.cpp

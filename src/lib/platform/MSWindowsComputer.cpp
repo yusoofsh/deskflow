@@ -22,6 +22,7 @@
 #include "deskflow/Clipboard.h"
 #include "deskflow/DisplayException.h"
 #include "deskflow/KeyMap.h"
+#include "platform/MSWindowsBrightness.h"
 #include "platform/MSWindowsClipboard.h"
 #include "platform/MSWindowsDesks.h"
 #include "platform/MSWindowsEventQueueBuffer.h"
@@ -113,6 +114,7 @@ MSWindowsComputer::MSWindowsComputer(bool isPrimary, bool useHooks, IEventQueue 
     m_window = createWindow(m_class, kAppNameW);
     if (m_isPrimary) {
       m_touchpad = std::make_unique<MSWindowsTouchpad>(m_window);
+      m_brightness = std::make_unique<MSWindowsBrightness>(m_window);
     }
     setupMouseKeys();
     LOG_DEBUG("computer shape: %d,%d %dx%d %s", m_x, m_y, m_w, m_h, m_multimon ? "(multi-monitor)" : "");
@@ -155,6 +157,7 @@ MSWindowsComputer::~MSWindowsComputer()
   delete m_desks;
   delete m_screensaver;
   m_touchpad.reset();
+  m_brightness.reset();
   destroyWindow(m_window);
   destroyClass(m_class);
 
@@ -253,6 +256,8 @@ void MSWindowsComputer::enter()
     nextMark();
 
     m_primaryKeyDownList.clear();
+
+    m_brightness->enter();
   } else {
     // Entering a secondary computer. Ensure that no screensaver is active
     // and that the computer is not in powersave mode.
@@ -317,6 +322,8 @@ void MSWindowsComputer::leave()
         LOG_VERBOSE("key button %d is down before leaving to another computer", i);
       }
     }
+
+    m_brightness->leave();
   }
 
   // now off computer
@@ -964,6 +971,14 @@ bool MSWindowsComputer::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LR
     // not handled, DefWindowProc frees the raw input
     break;
 
+  case WM_TIMER:
+    if (m_brightness != nullptr) {
+      for (const auto key : m_brightness->onTimer(wParam)) {
+        onBrightnessKey(key);
+      }
+    }
+    break;
+
   /* On windows 10 we don't receive WM_POWERBROADCAST after sleep.
    We receive only WM_TIMECHANGE hence this message is used to resume.*/
   case WM_TIMECHANGE:
@@ -986,6 +1001,12 @@ bool MSWindowsComputer::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LR
       m_events->addEvent(
           Event(EventTypes::ComputerSuspend, getEventTarget(), nullptr, Event::EventFlags::DeliverImmediately)
       );
+      break;
+
+    case PBT_POWERSETTINGCHANGE:
+      if (m_brightness != nullptr) {
+        m_brightness->onPowerSetting(*reinterpret_cast<const POWERBROADCAST_SETTING *>(lParam));
+      }
       break;
     }
     *result = TRUE;
@@ -1309,6 +1330,15 @@ void MSWindowsComputer::onTouchpadGesture(const TouchpadGesture &gesture)
   }
   *data = gesture;
   sendEvent(EventTypes::PrimaryComputerTouchpadGesture, data);
+}
+
+void MSWindowsComputer::onBrightnessKey(KeyID key)
+{
+  LOG_DEBUG("event: brightness key %s", key == kKeyBrightnessUp ? "up" : "down");
+  // there is no key button, as with media keys from a macOS server
+  const KeyModifierMask mask = m_keyState->getActiveModifiers();
+  m_keyState->sendKeyEvent(getEventTarget(), true, false, key, mask, 1, 0);
+  m_keyState->sendKeyEvent(getEventTarget(), false, false, key, mask, 1, 0);
 }
 
 bool MSWindowsComputer::onScreensaver(bool activated)
