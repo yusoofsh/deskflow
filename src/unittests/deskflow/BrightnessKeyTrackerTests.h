@@ -15,11 +15,14 @@ private Q_SLOTS:
   void stepsBecomeKeys();
   void quickStepsAllCount();
   void brightestLevelMakesRoom();
+  void quickReturnAtBrightestLevel();
+  void returnBeforeTheMoveIsReported();
   void bigMoveIsSkipped();
   void serverKeepsItsKeysOnItself();
   void noLevelsNoKeys();
   void dimmedDisplayIsNotAKey();
   void powerEventBeforeIsNotAKey();
   void powerEventAfterGivesTheLevelBack();
-  void enterDropsWaitingSteps();
+  void systemChangeWhileSettlingWins();
+  void returningKeepsWaitingSteps();
 };

@@ -175,7 +175,7 @@ std::vector<KeyID> MSWindowsBrightness::onTimer(UINT_PTR timer)
     return {};
   }
   stopSettling();
-  auto settled = m_tracker.settle();
+  auto settled = m_tracker.settle(secondsNow());
   setLevel(settled.level);
   return settled.keys;
 }
@@ -186,13 +186,13 @@ void MSWindowsBrightness::leave()
     std::scoped_lock lock(m_mutex);
     m_tracker.setLevels(m_levels);
   }
-  setLevel(m_tracker.leave().level);
+  setLevel(m_tracker.leave(secondsNow()).level);
 }
 
 void MSWindowsBrightness::enter()
 {
   stopSettling();
-  setLevel(m_tracker.enter().level);
+  setLevel(m_tracker.enter(secondsNow()).level);
 }
 
 void MSWindowsBrightness::setLevel(const std::optional<uint8_t> &level)
@@ -229,7 +229,8 @@ void MSWindowsBrightness::run()
     m_levels = std::move(levels);
     while (true) {
       m_wake.wait(lock, [this] { return m_stop || m_request; });
-      if (m_stop) {
+      // a brightness to put back still goes out when stopping
+      if (!m_request) {
         break;
       }
       const uint8_t level = *m_request;

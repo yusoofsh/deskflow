@@ -37,6 +37,8 @@ public:
   static constexpr double kSystemWindow = 2.0;
   //! How far leave() may move the brightness to make room for steps
   static constexpr int kMaxMove = 5;
+  //! How long a level this tracker asked for may take to be reported
+  static constexpr double kRequestTime = 1.0;
 
   struct Action
   {
@@ -50,10 +52,10 @@ public:
   void setLevels(std::vector<uint8_t> levels);
 
   //! The cursor left for a client
-  Action leave();
+  Action leave(double now);
 
   //! The cursor came back to the server
-  Action enter();
+  Action enter(double now);
 
   //! The server's display brightness is now \p level
   Action changed(uint8_t level, double now);
@@ -68,9 +70,20 @@ public:
   bool settling() const;
 
   //! Turn the steps that waited kSettleTime into keys
-  Action settle();
+  Action settle(double now);
 
 private:
+  struct Request
+  {
+    uint8_t level = 0;
+    double time = 0.0;
+  };
+
+  // notes the level of \p action as asked for
+  Action request(Action action, double now);
+  // true when \p level is one this tracker asked for, which then counts as reported
+  bool isRequested(uint8_t level, double now);
+  void forgetOldRequests(double now);
   bool systemChange(double now) const;
 
   std::vector<uint8_t> m_levels;
@@ -84,6 +97,9 @@ private:
   // brightness before leave() moved it off the brightest or darkest level, and where it moved to
   std::optional<uint8_t> m_before;
   std::optional<uint8_t> m_moved;
+
+  // levels asked for and not reported yet, oldest first
+  std::vector<Request> m_requested;
 
   std::vector<KeyID> m_steps;
   double m_firstStep = 0.0;
