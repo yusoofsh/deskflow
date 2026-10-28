@@ -39,22 +39,26 @@ void BrightnessKeyTrackerTests::stepsBecomeKeys()
 {
   auto tracker = onClient(60);
 
-  // the server's brightness goes back at once, the key waits for kSettleTime
+  // the key goes out and the server's brightness goes back at once
   auto down = tracker.changed(50, 10.0);
-  QVERIFY(down.keys.empty());
+  QCOMPARE(down.keys, Keys{kKeyBrightnessDown});
   QCOMPARE(down.level, Level{60});
   QVERIFY(tracker.settling());
 
   // putting the brightness back is not a step
-  QVERIFY(!tracker.changed(60, 10.05).level);
+  auto back = tracker.changed(60, 10.05);
+  QVERIFY(back.keys.empty());
+  QVERIFY(!back.level);
 
+  // without a power event nothing is taken back
   auto settled = tracker.settle(10.2);
-  QCOMPARE(settled.keys, Keys{kKeyBrightnessDown});
+  QVERIFY(settled.keys.empty());
   QVERIFY(!settled.level);
   QVERIFY(!tracker.settling());
 
-  QCOMPARE(tracker.changed(70, 11.0).level, Level{60});
-  QCOMPARE(tracker.settle(11.2).keys, Keys{kKeyBrightnessUp});
+  auto up = tracker.changed(70, 11.0);
+  QCOMPARE(up.keys, Keys{kKeyBrightnessUp});
+  QCOMPARE(up.level, Level{60});
 }
 
 void BrightnessKeyTrackerTests::quickStepsAllCount()
@@ -62,10 +66,10 @@ void BrightnessKeyTrackerTests::quickStepsAllCount()
   auto tracker = onClient(60);
 
   // a second press lands before the brightness was put back
-  tracker.changed(50, 10.0);
-  tracker.changed(40, 10.05);
-  tracker.changed(60, 10.1);
-  QCOMPARE(tracker.settle(10.2).keys, (Keys{kKeyBrightnessDown, kKeyBrightnessDown}));
+  QCOMPARE(tracker.changed(50, 10.0).keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(tracker.changed(40, 10.05).keys, Keys{kKeyBrightnessDown});
+  QVERIFY(tracker.changed(60, 10.1).keys.empty());
+  QVERIFY(tracker.settle(10.2).keys.empty());
 }
 
 void BrightnessKeyTrackerTests::brightestLevelMakesRoom()
@@ -78,9 +82,10 @@ void BrightnessKeyTrackerTests::brightestLevelMakesRoom()
   QCOMPARE(tracker.leave(10.0).level, Level{99});
   QVERIFY(!tracker.changed(99, 10.05).level);
 
-  QCOMPARE(tracker.changed(100, 11.0).level, Level{99});
+  auto up = tracker.changed(100, 11.0);
+  QCOMPARE(up.keys, Keys{kKeyBrightnessUp});
+  QCOMPARE(up.level, Level{99});
   tracker.changed(99, 11.05);
-  QCOMPARE(tracker.settle(11.2).keys, Keys{kKeyBrightnessUp});
 
   // and goes back up when the cursor comes back
   QCOMPARE(tracker.enter(12.0).level, Level{100});
@@ -133,8 +138,9 @@ void BrightnessKeyTrackerTests::bigMoveIsSkipped()
 
   // steps down still count
   tracker.leave(12.0);
-  QCOMPARE(tracker.changed(50, 13.0).level, Level{100});
-  QCOMPARE(tracker.settle(13.2).keys, Keys{kKeyBrightnessDown});
+  auto down = tracker.changed(50, 13.0);
+  QCOMPARE(down.keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(down.level, Level{100});
 }
 
 void BrightnessKeyTrackerTests::serverKeepsItsKeysOnItself()
@@ -181,8 +187,9 @@ void BrightnessKeyTrackerTests::dimmedDisplayIsNotAKey()
   QVERIFY(!tracker.settling());
 
   // keys count again once the power events are kSystemWindow behind
-  QCOMPARE(tracker.changed(50, 203.0).level, Level{60});
-  QCOMPARE(tracker.settle(203.2).keys, Keys{kKeyBrightnessDown});
+  auto down = tracker.changed(50, 203.0);
+  QCOMPARE(down.keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(down.level, Level{60});
 }
 
 void BrightnessKeyTrackerTests::powerEventBeforeIsNotAKey()
@@ -195,8 +202,9 @@ void BrightnessKeyTrackerTests::powerEventBeforeIsNotAKey()
   QVERIFY(!tracker.settling());
 
   // the battery brightness is the one to keep from now on
-  QCOMPARE(tracker.changed(30, 110.0).level, Level{40});
-  QCOMPARE(tracker.settle(110.2).keys, Keys{kKeyBrightnessDown});
+  auto down = tracker.changed(30, 110.0);
+  QCOMPARE(down.keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(down.level, Level{40});
 }
 
 void BrightnessKeyTrackerTests::powerEventAfterGivesTheLevelBack()
@@ -204,23 +212,24 @@ void BrightnessKeyTrackerTests::powerEventAfterGivesTheLevelBack()
   auto tracker = onClient(60);
 
   // the brightness changes and the power event that explains it comes just after
-  QCOMPARE(tracker.changed(40, 100.0).level, Level{60});
+  QCOMPARE(tracker.changed(40, 100.0).keys, Keys{kKeyBrightnessDown});
   tracker.changed(60, 100.05);
   tracker.powerChanged(100.1);
 
+  // the key that already went out is taken back
   auto settled = tracker.settle(100.2);
-  QVERIFY(settled.keys.empty());
+  QCOMPARE(settled.keys, Keys{kKeyBrightnessUp});
   QCOMPARE(settled.level, Level{40});
   QVERIFY(!tracker.changed(40, 100.25).level);
 
-  // the same when the display dims
+  // the same when the display dims, in reverse order for several steps
   auto dimmed = onClient(60);
-  dimmed.changed(30, 100.0);
-  dimmed.changed(60, 100.05);
+  dimmed.changed(50, 100.0);
+  dimmed.changed(55, 100.05);
   dimmed.displayChanged(false, 100.1);
   settled = dimmed.settle(100.2);
-  QVERIFY(settled.keys.empty());
-  QCOMPARE(settled.level, Level{30});
+  QCOMPARE(settled.keys, (Keys{kKeyBrightnessDown, kKeyBrightnessUp}));
+  QCOMPARE(settled.level, Level{55});
 }
 
 void BrightnessKeyTrackerTests::systemChangeWhileSettlingWins()
@@ -233,17 +242,17 @@ void BrightnessKeyTrackerTests::systemChangeWhileSettlingWins()
   QVERIFY(!tracker.changed(80, 10.15).level);
 
   auto settled = tracker.settle(10.2);
-  QVERIFY(settled.keys.empty());
+  QCOMPARE(settled.keys, Keys{kKeyBrightnessUp});
   QCOMPARE(settled.level, Level{80});
 }
 
-void BrightnessKeyTrackerTests::returningKeepsWaitingSteps()
+void BrightnessKeyTrackerTests::returningRightAfterAStep()
 {
   auto tracker = onClient(60);
-  tracker.changed(50, 10.0);
+  QCOMPARE(tracker.changed(50, 10.0).keys, Keys{kKeyBrightnessDown});
 
-  // the step had no time to become a key, so the server keeps it
-  QCOMPARE(tracker.enter(10.1).level, Level{50});
+  // the key already went to the client, so the server keeps its own brightness
+  QVERIFY(!tracker.enter(10.1).level);
   QVERIFY(!tracker.settling());
   QVERIFY(tracker.settle(10.2).keys.empty());
 }

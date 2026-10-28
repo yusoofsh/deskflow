@@ -34,8 +34,8 @@ public:
   MSWindowsBrightness(const MSWindowsBrightness &) = delete;
   MSWindowsBrightness &operator=(const MSWindowsBrightness &) = delete;
 
-  //! Handle a WM_POWERBROADCAST PBT_POWERSETTINGCHANGE message
-  void onPowerSetting(const POWERBROADCAST_SETTING &setting);
+  //! Handle a WM_POWERBROADCAST PBT_POWERSETTINGCHANGE message and get the brightness keys for the client
+  std::vector<KeyID> onPowerSetting(const POWERBROADCAST_SETTING &setting);
 
   //! Handle a WM_TIMER message and get the brightness keys for the client
   std::vector<KeyID> onTimer(UINT_PTR timer);

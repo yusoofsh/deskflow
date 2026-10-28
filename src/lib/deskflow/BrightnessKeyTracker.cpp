@@ -52,11 +52,8 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::leave(double now)
 BrightnessKeyTracker::Action BrightnessKeyTracker::enter(double now)
 {
   Action action;
-  if (!m_steps.empty()) {
-    // steps that had no time to settle stay on the server
-    action.level = m_stepLevel;
-  } else if (m_before && m_held == m_moved) {
-    // undo leave() unless the system changed the brightness since
+  // undo leave() unless the system changed the brightness since
+  if (m_before && m_held == m_moved) {
     action.level = m_before;
   }
   m_onClient = false;
@@ -86,8 +83,10 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::changed(uint8_t level, double
   if (m_steps.empty()) {
     m_firstStep = now;
   }
-  m_steps.push_back(level > *previous ? kKeyBrightnessUp : kKeyBrightnessDown);
+  const KeyID key = level > *previous ? kKeyBrightnessUp : kKeyBrightnessDown;
+  m_steps.push_back(key);
   m_stepLevel = level;
+  action.keys = {key};
   action.level = m_held;
   return request(std::move(action), now);
 }
@@ -116,11 +115,13 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::settle(double now)
   }
 
   if (systemChange(m_firstStep)) {
-    // a power event came right after the steps, so the system made them: give its level back
+    // a power event came right after the steps, so the system made them: undo the
+    // keys on the client and give the server the system's level back
+    for (auto key = m_steps.rbegin(); key != m_steps.rend(); ++key) {
+      action.keys.push_back(*key == kKeyBrightnessUp ? kKeyBrightnessDown : kKeyBrightnessUp);
+    }
     m_held = m_stepLevel;
     action.level = m_stepLevel;
-  } else {
-    action.keys = std::move(m_steps);
   }
   m_steps.clear();
   return request(std::move(action), now);
