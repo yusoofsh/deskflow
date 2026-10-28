@@ -23,15 +23,16 @@ client, and the server's own brightness is put back.
 The system changes the brightness too, for example when it dims an idle display
 or switches between battery and mains. Those changes come with other power
 events, so a step only counts when no power event came kSystemWindow before it
-or comes in the kSettleTime after it. Steps wait for kSettleTime before they
-become keys.
+or comes in the kSettleTime after it. A step's key goes out at once; when a
+power event follows within kSettleTime, settle() takes the keys back with
+opposite keys and gives the server the system's brightness.
 
 Brightness levels are in percent, the way Windows reports them.
 */
 class BrightnessKeyTracker
 {
 public:
-  //! How long a step waits for a power event that shows the system made it
+  //! How long after a step a power event still shows the system made it
   static constexpr double kSettleTime = 0.2;
   //! A step this soon after a power event was made by the system
   static constexpr double kSystemWindow = 2.0;
@@ -69,7 +70,7 @@ public:
   //! True while steps wait for settle()
   bool settling() const;
 
-  //! Turn the steps that waited kSettleTime into keys
+  //! Take back the steps of the last kSettleTime if a power event shows the system made them
   Action settle(double now);
 
 private:

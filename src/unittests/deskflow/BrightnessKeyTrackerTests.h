@@ -24,5 +24,5 @@ private Q_SLOTS:
   void powerEventBeforeIsNotAKey();
   void powerEventAfterGivesTheLevelBack();
   void systemChangeWhileSettlingWins();
-  void returningKeepsWaitingSteps();
+  void returningRightAfterAStep();
 };

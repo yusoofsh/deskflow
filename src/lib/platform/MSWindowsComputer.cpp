@@ -1005,7 +1005,9 @@ bool MSWindowsComputer::onEvent(HWND, UINT msg, WPARAM wParam, LPARAM lParam, LR
 
     case PBT_POWERSETTINGCHANGE:
       if (m_brightness != nullptr) {
-        m_brightness->onPowerSetting(*reinterpret_cast<const POWERBROADCAST_SETTING *>(lParam));
+        for (const auto key : m_brightness->onPowerSetting(*reinterpret_cast<const POWERBROADCAST_SETTING *>(lParam))) {
+          onBrightnessKey(key);
+        }
       }
       break;
     }

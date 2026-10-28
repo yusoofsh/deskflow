@@ -147,26 +147,30 @@ MSWindowsBrightness::~MSWindowsBrightness()
   }
 }
 
-void MSWindowsBrightness::onPowerSetting(const POWERBROADCAST_SETTING &setting)
+std::vector<KeyID> MSWindowsBrightness::onPowerSetting(const POWERBROADCAST_SETTING &setting)
 {
   DWORD value = 0;
   if (setting.DataLength < sizeof(value)) {
-    return;
+    return {};
   }
   std::memcpy(&value, setting.Data, sizeof(value));
 
   const double now = secondsNow();
   if (setting.PowerSetting == kBrightness) {
-    setLevel(m_tracker.changed(static_cast<uint8_t>(std::min<DWORD>(value, 100)), now).level);
+    LOG_DEBUG("display brightness is %d", value);
+    auto changed = m_tracker.changed(static_cast<uint8_t>(std::min<DWORD>(value, 100)), now);
+    setLevel(changed.level);
     if (m_tracker.settling() && !m_settling) {
       const auto delay = static_cast<UINT>(BrightnessKeyTracker::kSettleTime * 1000);
       m_settling = SetTimer(m_window, kSettleTimer, delay, nullptr) != 0;
     }
+    return changed.keys;
   } else if (setting.PowerSetting == kDisplayState) {
     m_tracker.displayChanged(value == kDisplayOn, now);
   } else if (setting.PowerSetting == kPowerSource || setting.PowerSetting == kPowerSaving) {
     m_tracker.powerChanged(now);
   }
+  return {};
 }
 
 std::vector<KeyID> MSWindowsBrightness::onTimer(UINT_PTR timer)
