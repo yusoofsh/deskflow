@@ -8,6 +8,7 @@
 
 #include "gui/TlsUtility.h"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QMediaDevices>
 
@@ -53,6 +54,13 @@ AudioSharing::AudioSharing(QObject *parent) : QObject(parent)
       setStatus(tr("Sharing audio with %n computer(s)", "", count));
   });
   connect(&m_engine, &AudioEngine::error, this, &AudioSharing::setStatus);
+  // The main window is not always destroyed on quit, so the destructor alone can leave a Mac on BlackHole.
+  connect(qApp, &QCoreApplication::aboutToQuit, this, [this] {
+    m_link.stop();
+    m_engine.stop();
+    restoreSystemDevices();
+    m_active = false;
+  });
 
   connect(Settings::instance(), &Settings::settingsChanged, this, [this](const QString &key) {
     if (key.startsWith(QStringLiteral("audio/")) || key == Settings::Core::CoreMode ||

@@ -1392,6 +1392,122 @@ Enabling this setting will disable the server config GUI.</source>
     </message>
 </context>
 <context>
+    <name>deskflow::gui::audio::AudioEngine</name>
+    <message>
+        <source>No audio input device selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not open %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::audio::AudioLink</name>
+    <message>
+        <source>Audio could not listen on port %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for computers on port %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio refused: server fingerprint is not trusted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reconnecting to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio cannot reach %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::audio::AudioSharing</name>
+    <message numerus="yes">
+        <source>Sharing audio with %n computer(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Audio sharing is off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio starts when Deskflow starts</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::audio::AudioWidget</name>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use this computer&apos;s headset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send sound to the shared headset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Share audio:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capture sound from:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Headset mic:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Headset mic appears as:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Headset speaker:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uses BlackHole for this Mac&apos;s sound and the headset mic.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install BlackHole</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installing BlackHole...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BlackHole was not installed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>i18n</name>
     <message>
         <source>LocalizedName</source>

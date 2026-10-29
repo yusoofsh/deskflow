@@ -55,10 +55,11 @@ Audio runs while the core runs, on the core port + 1. The server routes it; clie
 | captureDevice  | Device id     | Input to capture: the headset mic for role `1`, the loopback device (e.g. `BlackHole 2ch` on macOS) for role `2` |
 | playbackDevice | Device id     | Output to play to: the headset speaker for role `1`, the virtual mic device (e.g. `BlackHole 16ch` on macOS) for role `2` |
 
-On macOS, role `2` needs both BlackHole packages from [existential.audio](https://existential.audio/blackhole/):
-[BlackHole 2ch](https://existential.audio/downloads/BlackHole2ch-0.7.1.pkg) and
-[BlackHole 16ch](https://existential.audio/downloads/BlackHole16ch-0.7.1.pkg).
-Open each package to run its installer, or install both from the command line with `sudo installer -pkg <pkg> -target /`.
+On macOS, role `2` uses [BlackHole](https://existential.audio/blackhole/) and hides the device choices.
+To install it, click **Install BlackHole** in the Audio section and enter your password once.
+The button installs the [BlackHole 2ch](https://existential.audio/downloads/BlackHole2ch-0.7.1.pkg) and
+[BlackHole 16ch](https://existential.audio/downloads/BlackHole16ch-0.7.1.pkg) packages.
+Deskflow uses 2ch for the Mac's sound and 16ch for the headset mic, so the mic never mixes into the captured sound.
 
 ### Client
 
