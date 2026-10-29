@@ -15,4 +15,5 @@ private Q_SLOTS:
   void rejectsUnknownKinds();
   void routesSpeakerToHeadsetAndMicToRemotes();
   void decodesOnlyKnownRoles();
+  void dropsAudioThatWouldPlayLate();
 };

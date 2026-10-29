@@ -13,8 +13,6 @@
 namespace deskflow::gui::audio {
 
 namespace {
-constexpr qsizetype kMaxPendingBytes = kChunkBytes * 20; // 200 ms
-constexpr qsizetype kTrimToBytes = kChunkBytes * 6;      // 60 ms
 constexpr qsizetype kDeviceBufferBytes = kChunkBytes * 8;
 constexpr qint64 kIdleStreamMs = 2000;
 } // namespace
@@ -112,8 +110,7 @@ void AudioEngine::play(SourceId source, const QByteArray &pcm)
     return;
   s->pending.append(pcm);
   s->lastFrame.start();
-  if (s->pending.size() > kMaxPendingBytes)
-    s->pending.remove(0, s->pending.size() - kTrimToBytes);
+  s->pending.remove(0, staleBytes(s->pending.size(), s->sink->bufferSize() - s->sink->bytesFree()));
   drain();
 }
 
