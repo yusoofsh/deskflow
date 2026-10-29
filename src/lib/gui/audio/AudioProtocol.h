@@ -60,6 +60,12 @@ quint16 audioPort(quint16 corePort);
 std::optional<FrameKind> sentKind(Role role);
 
 /**
+ * @return How many of the oldest @p pending bytes to drop, given @p playing bytes already queued in the device.
+ * Audio that arrives late or in a burst would otherwise stay that far behind for as long as the stream plays.
+ */
+qsizetype staleBytes(qsizetype pending, qsizetype playing);
+
+/**
  * @brief The routing rule of the link: Remote speaker audio reaches Headsets, Headset mic audio reaches Remotes.
  */
 bool shouldDeliver(FrameKind kind, Role from, Role to);
