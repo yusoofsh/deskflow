@@ -81,4 +81,13 @@ void AudioProtocolTests::decodesOnlyKnownRoles()
   QVERIFY(!decodeHello(QByteArray()));
 }
 
+void AudioProtocolTests::dropsAudioThatWouldPlayLate()
+{
+  const auto ms = [](int n) { return qsizetype(streamFormat().bytesForDuration(n * 1000)); };
+  QCOMPARE(staleBytes(ms(40), ms(20)), 0);
+  QCOMPARE(staleBytes(ms(200), ms(20)), ms(190));
+  QCOMPARE(staleBytes(ms(10), ms(80)), ms(10));
+  QCOMPARE(staleBytes(ms(70) + 2, 0), ms(40));
+}
+
 QTEST_MAIN(AudioProtocolTests)

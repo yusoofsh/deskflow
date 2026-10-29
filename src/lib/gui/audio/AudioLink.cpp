@@ -20,8 +20,7 @@ namespace deskflow::gui::audio {
 
 namespace {
 constexpr int kRetryMs = 3000;
-// A connection that is up but never finishes the handshake would otherwise hold the link forever.
-constexpr int kHandshakeMs = 5000;
+constexpr int kHandshakeTimeoutMs = 5000;
 // Beyond this much unsent data the receiver is not keeping up; dropping audio beats growing latency.
 constexpr qint64 kMaxQueuedBytes = kChunkBytes * 50;
 
@@ -207,7 +206,7 @@ void AudioLink::reconnect()
     return;
   const auto attempt = m_nextHost++;
   m_host = m_hosts.at(attempt % m_hosts.size());
-  // Like the core, try IPv4 first: mDNS can list an IPv6 link-local address first that never completes a handshake.
+  // mDNS can resolve a Windows host to an IPv6 link-local address first, and TLS over it stalls.
   const auto protocol =
       (attempt / m_hosts.size()) % 2 == 0 ? QAbstractSocket::IPv4Protocol : QAbstractSocket::AnyIPProtocol;
   if (m_uplink)
@@ -245,7 +244,7 @@ void AudioLink::reconnect()
     m_retry.start();
   });
 
-  QTimer::singleShot(kHandshakeMs, socket, [this, socket] {
+  QTimer::singleShot(kHandshakeTimeoutMs, socket, [this, socket] {
     if (socket != m_uplink || socket->property("trusted").toBool())
       return;
     Q_EMIT statusChanged(tr("Audio cannot reach %1: no answer").arg(m_host));

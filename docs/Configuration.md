@@ -62,7 +62,7 @@ Deskflow switches the Mac to both while sharing and switches back when it stops.
 
 BlackHole Loopback is two drivers built from [BlackHole](https://github.com/ExistentialAudio/BlackHole) 0.7.2
 by `deploy/mac/build-blackhole-loopback.sh` and shipped inside `Deskflow.app`.
-Each driver also has a mirror device that Deskflow reads or writes and that macOS keeps out of the Sound menu.
+Each driver also has a hidden mirror device that Deskflow reads or writes and that no other app lists.
 Two drivers keep the shared microphone from mixing into the captured Mac sound.
 
 ### Client

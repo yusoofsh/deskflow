@@ -33,8 +33,7 @@ private:
 
   QAudioFormat m_from;
   QByteArray m_pending;
-  Sample m_previous{};
-  qint64 m_position = kSampleRate; // In 1/kSampleRate input frames; frame 0 is m_previous.
+  qint64 m_inputTicks = 0;
 };
 
 } // namespace deskflow::gui::audio

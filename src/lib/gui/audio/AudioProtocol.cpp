@@ -8,11 +8,15 @@
 
 #include <QtEndian>
 
+#include <algorithm>
+
 namespace deskflow::gui::audio {
 
 namespace {
 constexpr qsizetype kLengthBytes = 4;
 constexpr qsizetype kHeaderBytes = 3;
+constexpr qsizetype kMaxQueuedBytes = kChunkBytes * 6;
+constexpr qsizetype kQueuedAfterDropBytes = kChunkBytes * 3;
 } // namespace
 
 QAudioFormat streamFormat()
@@ -40,6 +44,14 @@ std::optional<FrameKind> sentKind(Role role)
     break;
   }
   return std::nullopt;
+}
+
+qsizetype staleBytes(qsizetype pending, qsizetype playing)
+{
+  const auto queued = pending + playing;
+  if (queued <= kMaxQueuedBytes)
+    return 0;
+  return std::min(pending, queued - kQueuedAfterDropBytes) / kBytesPerFrame * kBytesPerFrame;
 }
 
 bool shouldDeliver(FrameKind kind, Role from, Role to)

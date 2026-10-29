@@ -12,7 +12,10 @@
 #include "common/Settings.h"
 
 #include <QAudioDevice>
+#include <QMediaDevices>
 #include <QObject>
+
+#include <optional>
 
 namespace deskflow::gui::audio {
 
@@ -43,13 +46,23 @@ Q_SIGNALS:
   void statusChanged(const QString &status);
 
 private:
+  struct EngineDevices
+  {
+    QByteArray capture;
+    QByteArray playback;
+    bool operator==(const EngineDevices &) const = default;
+  };
+
   void restart();
+  void followDevices();
   void setStatus(const QString &status);
   void switchSystemDevices(Role role, const QAudioDevice &capture, const QAudioDevice &playback);
   void restoreSystemDevices();
 
   AudioLink m_link;
   AudioEngine m_engine;
+  QMediaDevices m_devices;
+  std::optional<EngineDevices> m_engineDevices;
   bool m_coreRunning = false;
   bool m_active = false;
   QString m_status;
