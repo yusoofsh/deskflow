@@ -25,6 +25,8 @@ private Q_SLOTS:
   void powerEventAfterGivesTheLevelBack();
   void systemChangeWhileSettlingWins();
   void returningRightAfterAStep();
-  void levelPutBackIsNotReported();
   void systemSetsTheBrightestLevel();
+  void lostLevelIsAskedForAgain();
+  void stepAfterALostLevel();
+  void retryStopsWhenTheBrightnessMoves();
 };

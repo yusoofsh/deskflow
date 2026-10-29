@@ -27,6 +27,9 @@ or comes in the kSettleTime after it. A step's key goes out at once; when a
 power event follows within kSettleTime, settle() takes the keys back with
 opposite keys and gives the server the system's brightness.
 
+Windows sometimes drops a brightness asked for right after a change, so a level
+that isn't reported is asked for again with retry().
+
 Brightness levels are in percent, the way Windows reports them.
 */
 class BrightnessKeyTracker
@@ -40,6 +43,10 @@ public:
   static constexpr int kMaxMove = 5;
   //! How long a level this tracker asked for may take to be reported
   static constexpr double kRequestTime = 1.0;
+  //! How long to wait for a level asked for before retry()
+  static constexpr double kRetryTime = 0.3;
+  //! How often retry() asks for the same level
+  static constexpr int kMaxRetries = 3;
 
   struct Action
   {
@@ -73,6 +80,9 @@ public:
   //! Take back the steps of the last kSettleTime if a power event shows the system made them
   Action settle(double now);
 
+  //! The level to ask for again when the last one asked for wasn't reported in kRetryTime
+  std::optional<uint8_t> retry(double now);
+
 private:
   // keeps \p level on the server, or the level next to it when \p level is the brightest or
   // darkest one; gives the level to set when it's the one next to it
@@ -92,7 +102,7 @@ private:
   bool systemChange(double now) const;
 
   std::vector<uint8_t> m_levels;
-  // the server's brightness, as last reported or asked for
+  // the server's brightness, as last reported
   std::optional<uint8_t> m_level;
   bool m_onClient = false;
   bool m_displayOn = true;
@@ -106,6 +116,9 @@ private:
 
   // levels asked for and not reported yet, oldest first
   std::vector<Request> m_requested;
+  // the last level asked for until it's reported, and how often retry() asked for it
+  std::optional<uint8_t> m_wanted;
+  int m_retries = 0;
 
   std::vector<KeyID> m_steps;
   double m_firstStep = 0.0;

@@ -29,6 +29,7 @@ const GUID kPowerSaving = {0xe00958c0, 0xc213, 0x4ace, {0xac, 0x77, 0xfe, 0xcc, 
 constexpr DWORD kDisplayOn = 1;
 
 constexpr UINT_PTR kSettleTimer = 0xB1;
+constexpr UINT_PTR kRetryTimer = 0xB2;
 
 double secondsNow()
 {
@@ -142,6 +143,7 @@ MSWindowsBrightness::~MSWindowsBrightness()
   m_thread.join();
 
   stopSettling();
+  KillTimer(m_window, kRetryTimer);
   for (const auto notification : m_notifications) {
     UnregisterPowerSettingNotification(notification);
   }
@@ -177,6 +179,14 @@ std::vector<KeyID> MSWindowsBrightness::onPowerSetting(const POWERBROADCAST_SETT
 
 std::vector<KeyID> MSWindowsBrightness::onTimer(UINT_PTR timer)
 {
+  if (timer == kRetryTimer) {
+    KillTimer(m_window, kRetryTimer);
+    if (const auto level = m_tracker.retry(secondsNow())) {
+      LOG_DEBUG("the display brightness is not %d yet", *level);
+      setLevel(level);
+    }
+    return {};
+  }
   if (timer != kSettleTimer) {
     return {};
   }
@@ -212,6 +222,8 @@ void MSWindowsBrightness::setLevel(const std::optional<uint8_t> &level)
     m_request = level;
   }
   m_wake.notify_one();
+  // replaces the timer of an earlier level
+  SetTimer(m_window, kRetryTimer, static_cast<UINT>(BrightnessKeyTracker::kRetryTime * 1000), nullptr);
 }
 
 void MSWindowsBrightness::stopSettling()

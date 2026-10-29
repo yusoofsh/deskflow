@@ -51,9 +51,18 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::enter(double now)
 BrightnessKeyTracker::Action BrightnessKeyTracker::changed(uint8_t level, double now)
 {
   Action action;
+  const auto previous = m_level;
   m_level = level;
-  // levels this tracker asked for, and the held one, are the server's brightness being put back
-  if (isRequested(level, now) || !m_onClient || !m_held || level == *m_held) {
+  if (level == m_wanted) {
+    m_wanted.reset();
+  }
+  // levels this tracker asked for are the server's brightness being put back
+  if (isRequested(level, now)) {
+    return action;
+  }
+  // the system or the user moved the brightness since, so it isn't asked for again
+  m_wanted.reset();
+  if (!m_onClient || !m_held || !previous || level == *previous || level == *m_held) {
     return action;
   }
 
@@ -66,8 +75,8 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::changed(uint8_t level, double
   if (m_steps.empty()) {
     m_firstStep = now;
   }
-  // Windows may not report the held level once it's put back, so a step goes from there
-  const KeyID key = level > *m_held ? kKeyBrightnessUp : kKeyBrightnessDown;
+  // the step goes from the last level reported, which is the held one unless putting it back failed
+  const KeyID key = level > *previous ? kKeyBrightnessUp : kKeyBrightnessDown;
   m_steps.push_back(key);
   m_stepLevel = level;
   action.keys = {key};
@@ -84,6 +93,10 @@ void BrightnessKeyTracker::displayChanged(bool on, double now)
 {
   m_displayOn = on;
   powerChanged(now);
+  // a display that's off or dimmed has the brightness the system gave it
+  if (!on) {
+    m_wanted.reset();
+  }
 }
 
 bool BrightnessKeyTracker::settling() const
@@ -111,6 +124,19 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::settle(double now)
   return request(std::move(action), now);
 }
 
+std::optional<uint8_t> BrightnessKeyTracker::retry(double now)
+{
+  if (!m_wanted || m_retries == kMaxRetries) {
+    m_wanted.reset();
+    return std::nullopt;
+  }
+  ++m_retries;
+  // the level counts as asked for from now on
+  std::erase_if(m_requested, [this](const auto &r) { return r.level == *m_wanted; });
+  m_requested.push_back({*m_wanted, now});
+  return m_wanted;
+}
+
 std::optional<uint8_t> BrightnessKeyTracker::hold(uint8_t level)
 {
   m_held = level;
@@ -136,7 +162,8 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::request(Action action, double
 {
   if (action.level) {
     m_requested.push_back({*action.level, now});
-    m_level = action.level;
+    m_wanted = action.level;
+    m_retries = 0;
   }
   return action;
 }
