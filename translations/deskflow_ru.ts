@@ -1436,6 +1436,10 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
         <source>Audio cannot reach %1: %2</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Audio cannot reach %1: no answer</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>deskflow::gui::audio::AudioSharing</name>
@@ -1467,14 +1471,6 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Use this computer&apos;s headset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Send sound to the shared headset</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Choose a device</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1487,31 +1483,39 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Headset mic:</source>
+        <source>Uses BlackHole Loopback for this Mac&apos;s sound and microphone.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Headset mic appears as:</source>
+        <source>Install BlackHole Loopback</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Headset speaker:</source>
+        <source>Use this computer&apos;s audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Uses BlackHole for this Mac&apos;s sound and the headset mic.</source>
+        <source>Use another computer&apos;s audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Install BlackHole</source>
+        <source>Installing BlackHole Loopback...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Installing BlackHole...</source>
+        <source>BlackHole Loopback was not installed: %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>BlackHole was not installed: %1</source>
+        <source>Microphone:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Microphone appears as:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Speaker:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
