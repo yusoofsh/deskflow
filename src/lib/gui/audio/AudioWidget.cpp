@@ -102,7 +102,9 @@ void AudioWidget::installBlackHole()
   auto process = new QProcess(this);
   connect(process, &QProcess::finished, this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
     if (exitStatus != QProcess::NormalExit || exitCode != 0)
-      m_status->setText(tr("BlackHole was not installed: %1").arg(QString::fromUtf8(process->readAllStandardError()).trimmed()));
+      m_status->setText(
+          tr("BlackHole was not installed: %1").arg(QString::fromUtf8(process->readAllStandardError()).trimmed())
+      );
     m_install->setEnabled(true);
     m_install->setText(tr("Install BlackHole"));
     process->deleteLater();
