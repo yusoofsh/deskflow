@@ -33,6 +33,10 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 
+	<!-- Start without a Dock icon, the app becomes a regular app when its window is shown -->
+	<key>LSUIElement</key>
+	<true/>
+
 	<!-- Prevent macOS from terminating during memory pressure -->
 	<key>NSSupportsAutomaticTermination</key>
 	<false/>
