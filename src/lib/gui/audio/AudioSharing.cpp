@@ -56,6 +56,8 @@ AudioSharing::AudioSharing(QObject *parent) : QObject(parent)
       setStatus(tr("Sharing audio with %n computer(s)", "", count));
   });
   connect(&m_engine, &AudioEngine::error, this, &AudioSharing::setStatus);
+  connect(&m_devices, &QMediaDevices::audioInputsChanged, this, &AudioSharing::followDevices);
+  connect(&m_devices, &QMediaDevices::audioOutputsChanged, this, &AudioSharing::followDevices);
   // The main window is not always destroyed on quit, so the destructor alone can leave a Mac on BlackHole.
   connect(qApp, &QCoreApplication::aboutToQuit, this, [this] {
     m_link.stop();
@@ -123,6 +125,7 @@ void AudioSharing::restart()
 {
   m_link.stop();
   m_engine.stop();
+  m_engineDevices.reset();
   if (m_active)
     restoreSystemDevices();
   m_active = false;
@@ -138,11 +141,8 @@ void AudioSharing::restart()
     return;
   }
 
-  const auto capture = captureDevice(localRole);
-  const auto playback = playbackDevice(localRole);
-  switchSystemDevices(localRole, capture, playback);
   m_active = true;
-  m_engine.start(localRole, capture, playback);
+  followDevices();
 
   const LinkTls tls{
       TlsUtility::isEnabled(), Settings::value(Settings::Security::Certificate).toString(),
@@ -163,6 +163,21 @@ void AudioSharing::restart()
   m_link.connectTo(hosts, port, localRole, tls);
 }
 
+void AudioSharing::followDevices()
+{
+  if (!m_active)
+    return;
+  const auto localRole = role();
+  const auto capture = captureDevice(localRole);
+  const auto playback = playbackDevice(localRole);
+  const EngineDevices devices{capture.id(), playback.id()};
+  if (m_engineDevices == devices)
+    return;
+  m_engineDevices = devices;
+  switchSystemDevices(localRole, capture, playback);
+  m_engine.start(localRole, capture, playback);
+}
+
 void AudioSharing::setStatus(const QString &status)
 {
   if (status == m_status)
@@ -177,8 +192,10 @@ void AudioSharing::switchSystemDevices(Role role, const QAudioDevice &capture, c
 #ifdef Q_OS_MACOS
   if (role != Role::Remote || capture.isNull())
     return;
-  m_savedDefaultOutput = macDefaultAudioDevice(false);
-  m_savedDefaultInput = macDefaultAudioDevice(true);
+  if (m_savedDefaultOutput.isEmpty()) {
+    m_savedDefaultOutput = macDefaultAudioDevice(false);
+    m_savedDefaultInput = macDefaultAudioDevice(true);
+  }
   macSetDefaultAudioDevice(false, kLoopbackName);
   if (!playback.isNull())
     macSetDefaultAudioDevice(true, kLoopbackName);
