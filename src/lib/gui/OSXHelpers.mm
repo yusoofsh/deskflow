@@ -10,6 +10,7 @@
 #import <CoreAudio/CoreAudio.h>
 #import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
+#import <ServiceManagement/ServiceManagement.h>
 #import <UserNotifications/UNNotification.h>
 #import <UserNotifications/UNNotificationContent.h>
 #import <UserNotifications/UNNotificationTrigger.h>
@@ -116,6 +117,29 @@ void macOSNativeHide()
 {
   [NSApp hide:nil];
   [[NSApplication sharedApplication] setActivationPolicy:NSApplicationActivationPolicyAccessory];
+}
+
+void setLaunchAtLogin(bool enabled)
+{
+  if (@available(macOS 13.0, *)) {
+    SMAppService *service = [SMAppService mainAppService];
+    // an app that never registered can report not found rather than not registered
+    const bool isOn = service.status == SMAppServiceStatusEnabled;
+    const bool isTurnedOffByUser = service.status == SMAppServiceStatusRequiresApproval;
+    NSError *error = nil;
+    if (enabled) {
+      // leave a login item the user turned off in System Settings off
+      if (!isOn && !isTurnedOffByUser && ![service registerAndReturnError:&error]) {
+        qWarning("failed to add login item: %s", error.localizedDescription.UTF8String);
+      }
+    } else if ((isOn || isTurnedOffByUser) && ![service unregisterAndReturnError:&error]) {
+      qWarning("failed to remove login item: %s", error.localizedDescription.UTF8String);
+    }
+    qInfo(
+        "login item status: %ld (0 not registered, 1 on, 2 off in System Settings, 3 not found)",
+        static_cast<long>(service.status)
+    );
+  }
 }
 
 static NSApplicationTerminateReply deskflow_applicationShouldTerminate(id self, SEL _cmd, NSApplication *sender)

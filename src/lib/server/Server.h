@@ -32,6 +32,7 @@ class Computer;
 class IEventQueue;
 class Thread;
 class ClientListener;
+struct TouchpadGesture;
 
 //! Deskflow server
 /*!
@@ -315,6 +316,7 @@ private:
   void handleMotionPrimaryEvent(const Event &event);
   void handleMotionSecondaryEvent(const Event &event);
   void handleWheelEvent(const Event &event);
+  void handleTouchpadGestureEvent(const Event &event);
   void handleSwitchWaitTimeout();
   void handleClientDisconnected(BaseClientProxy *client);
   void handleClientCloseTimeout(BaseClientProxy *client);
@@ -335,6 +337,11 @@ private:
   bool onMouseMovePrimary(int32_t x, int32_t y);
   void onMouseMoveSecondary(int32_t dx, int32_t dy);
   void onMouseWheel(int32_t xDelta, int32_t yDelta);
+  void onTouchpadGesture(const TouchpadGesture &gesture);
+
+  // send touchpad swipes to the active client if it replays them, and tell the
+  // GUI so it can stop the primary computer acting on them too
+  void updateTouchpadGestureForwarding();
 
   // add client to list and attach event handlers for client
   bool addClient(BaseClientProxy *);
@@ -468,4 +475,6 @@ private:
   bool m_defaultLockToComputerState = false;
   bool m_disableLockToComputer = false;
   bool m_enableClipboard = true;
+  bool m_enableTouchpadGestures = false;
+  bool m_touchpadGesturesForwarded = false;
 };

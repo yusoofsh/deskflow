@@ -45,12 +45,17 @@ public:
   \c kHTML is a text format encoded in UTF-8 and containing a valid
   HTML fragment (but not necessarily a complete HTML document).
   Newlines are LF.
+
+  \c kFiles lists copied files and folders by their absolute paths on the
+  computer that owns the clipboard. The other computer fetches the files
+  before putting its own copies on its clipboard (see FileTransfer).
   */
   enum class Format
   {
     Text,        //!< Text format, UTF-8, newline is LF
     HTML,        //!< HTML format, HTML fragment, UTF-8, newline is LF
     Bitmap,      //!< Bitmap format, BMP 24/32bpp, BI_RGB
+    Files,       //!< Files format, absolute local paths, UTF-8, one per line, LF
     TotalFormats //!< The number of clipboard formats supported
   };
 

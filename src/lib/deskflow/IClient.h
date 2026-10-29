@@ -12,6 +12,7 @@
 #include "deskflow/KeyTypes.h"
 #include "deskflow/MouseTypes.h"
 #include "deskflow/OptionTypes.h"
+#include "deskflow/TouchpadGesture.h"
 
 #include <string>
 
@@ -126,6 +127,16 @@ public:
   Each wheel click should generate a delta of +/-120.
   */
   virtual void mouseWheel(int32_t xDelta, int32_t yDelta) = 0;
+
+  //! Notify of a touchpad swipe
+  /*!
+  Replay a three or four finger swipe from the primary computer's touchpad.
+  Computers that can't replay swipes ignore it.
+  */
+  virtual void touchpadGesture(const TouchpadGesture &)
+  {
+    // do nothing
+  }
 
   //! Notify of screen saver change
   virtual void screensaver(bool activate) = 0;

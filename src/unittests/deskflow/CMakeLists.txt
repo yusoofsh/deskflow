@@ -14,10 +14,34 @@ create_test(
 )
 
 create_test(
+  NAME FileTransferTests
+  DEPENDS app
+  LIBS arch base io ${extra_libs}
+  SOURCE FileTransferTests.cpp
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/deskflow"
+)
+
+create_test(
   NAME ClipboardChunksTests
   DEPENDS app
   LIBS arch base io ${extra_libs}
   SOURCE ClipboardChunksTests.cpp
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/deskflow"
+)
+
+create_test(
+  NAME BrightnessKeyTrackerTests
+  DEPENDS app
+  LIBS arch base ${extra_libs}
+  SOURCE BrightnessKeyTrackerTests.cpp
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/deskflow"
+)
+
+create_test(
+  NAME TouchpadGestureTrackerTests
+  DEPENDS app
+  LIBS arch base ${extra_libs}
+  SOURCE TouchpadGestureTrackerTests.cpp
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/deskflow"
 )
 

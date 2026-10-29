@@ -627,6 +627,10 @@ void MainWindow::serverConnectionConfigureClient(const QString &clientName)
 
 void MainWindow::open()
 {
+#ifdef Q_OS_MACOS
+  setLaunchAtLogin(Settings::value(Settings::Gui::LaunchAtLogin).toBool());
+#endif
+
   if (!Settings::value(Settings::Gui::Autohide).toBool())
     showAndActivate();
   else if (deskflow::platform::isMac())

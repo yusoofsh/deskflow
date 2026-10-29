@@ -12,6 +12,7 @@
 #include "deskflow/KeyTypes.h"
 #include "deskflow/MouseTypes.h"
 #include "deskflow/OptionTypes.h"
+#include "deskflow/TouchpadGesture.h"
 
 #include <string>
 
@@ -164,6 +165,9 @@ public:
   */
   void mouseWheel(int32_t xDelta, int32_t yDelta) const;
 
+  //! Replay a touchpad swipe
+  void touchpadGesture(const TouchpadGesture &gesture) const;
+
   //! Notify of options changes
   /*!
   Resets all options to their default values.
@@ -265,6 +269,9 @@ public:
   operating system.
   */
   KeyModifierMask pollActiveModifiers() const;
+
+  //! Test if touchpad swipes can be replayed
+  bool canReplayTouchpadGestures() const;
 
   //@}
 

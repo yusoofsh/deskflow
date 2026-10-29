@@ -8,10 +8,15 @@
 
 #include "base/Log.h"
 #include "deskflow/ClipboardChunk.h"
+#include "deskflow/FileClipboard.h"
+#include "deskflow/FileTransfer.h"
+#include "deskflow/PacedStreamWriter.h"
 #include "deskflow/ProtocolUtil.h"
 #include "deskflow/StreamChunker.h"
 #include "io/IStream.h"
 #include "server/Server.h"
+
+#include <cstring>
 
 //
 // ClientProxy1_6
@@ -19,10 +24,12 @@
 
 ClientProxy1_6::ClientProxy1_6(const std::string &name, deskflow::IStream *stream, Server *server, IEventQueue *events)
     : ClientProxy1_5(name, stream, server, events),
-      m_events(events)
+      m_events(events),
+      m_writer(std::make_unique<PacedStreamWriter>(stream, events)),
+      m_files(std::make_unique<FileTransfer>(stream, *m_writer))
 {
   m_events->addHandler(EventTypes::ClipboardSending, this, [this](const auto &e) {
-    ClipboardChunk::send(getStream(), e.getDataObject());
+    ClipboardChunk::sendPaced(*m_writer, getStream(), e.getDataObject());
   });
 }
 
@@ -40,6 +47,10 @@ void ClientProxy1_6::setClipboard(ClipboardID id, const IClipboard *clipboard)
     Clipboard::copy(&m_clipboard[id].m_clipboard, clipboard);
 
     std::string data = m_clipboard[id].m_clipboard.marshall();
+
+    // the client can fetch the files on this clipboard, and nothing else
+    if (id == kClipboardClipboard)
+      m_files->offer(deskflow::fileclipboard::copiedPaths(m_clipboard[id].m_clipboard));
 
     size_t size = data.size();
     LOG_DEBUG("sending clipboard %d to \"%s\"", id, getName().c_str());
@@ -67,19 +78,60 @@ bool ClientProxy1_6::recvClipboard()
          m_clipboardDataCached.size())
     );
     // save clipboard
-    m_clipboard[id].m_clipboard.unmarshall(m_clipboardDataCached, 0);
+    auto &clipboard = m_clipboard[id].m_clipboard;
+    clipboard.unmarshall(m_clipboardDataCached, 0);
     m_clipboard[id].m_sequenceNumber = seq;
     m_clipboardDataCached.clear();
     m_clipboardDataCached.shrink_to_fit();
 
-    // notify
-    auto *info = new ClipboardInfo;
-    info->m_id = id;
-    info->m_sequenceNumber = seq;
-    m_events->addEvent(Event(EventTypes::ClipboardChanged, getEventTarget(), info));
+    // copied files stay on the client until they are fetched, the paths mean nothing here
+    const QStringList copied = deskflow::fileclipboard::copiedPaths(clipboard);
+    deskflow::fileclipboard::removeCopiedPaths(clipboard);
+    if (id != kClipboardClipboard || copied.isEmpty()) {
+      if (id == kClipboardClipboard)
+        m_files->cancelFetch();
+      notifyClipboardChanged(id, seq);
+      return true;
+    }
+
+    m_files->fetch(copied, [this, id, seq](const QStringList &localPaths) {
+      if (!localPaths.isEmpty())
+        deskflow::fileclipboard::setCopiedPaths(m_clipboard[id].m_clipboard, localPaths);
+      notifyClipboardChanged(id, seq);
+    });
   } else if (r == TransferState::Error) {
     return false;
   }
 
   return true;
+}
+
+void ClientProxy1_6::touchpadGesture(const TouchpadGesture &gesture)
+{
+  LOG_VERBOSE(
+      "send touchpad gesture to \"%s\" phase=%d fingers=%d %+d,%+d", getName().c_str(), static_cast<int>(gesture.phase),
+      gesture.fingers, gesture.dx, gesture.dy
+  );
+  ProtocolUtil::writef(
+      getStream(), kMsgDTouchpadGesture, static_cast<int32_t>(gesture.phase), static_cast<int32_t>(gesture.fingers),
+      static_cast<int32_t>(gesture.dx), static_cast<int32_t>(gesture.dy)
+  );
+}
+
+bool ClientProxy1_6::parseMessage(const uint8_t *code)
+{
+  if (memcmp(code, kMsgCTouchpadGestures, 4) == 0) {
+    LOG_DEBUG("client \"%s\" replays touchpad gestures", getName().c_str());
+    m_acceptsTouchpadGestures = true;
+    return true;
+  }
+  return m_files->handleMessage(code) || ClientProxy1_5::parseMessage(code);
+}
+
+void ClientProxy1_6::notifyClipboardChanged(ClipboardID id, uint32_t sequence)
+{
+  auto *info = new ClipboardInfo;
+  info->m_id = id;
+  info->m_sequenceNumber = sequence;
+  m_events->addEvent(Event(EventTypes::ClipboardChanged, getEventTarget(), info));
 }

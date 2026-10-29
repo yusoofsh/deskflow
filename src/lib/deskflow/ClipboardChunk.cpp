@@ -7,6 +7,7 @@
 #include "deskflow/ClipboardChunk.h"
 
 #include "base/Log.h"
+#include "deskflow/PacedStreamWriter.h"
 #include "deskflow/ProtocolTypes.h"
 #include "deskflow/ProtocolUtil.h"
 #include "io/IStream.h"
@@ -202,4 +203,19 @@ void ClipboardChunk::send(deskflow::IStream *stream, void *data)
   }
 
   ProtocolUtil::writef(stream, kMsgDClipboard, id, sequence, mark, &dataChunk);
+}
+
+void ClipboardChunk::sendPaced(PacedStreamWriter &writer, deskflow::IStream *stream, const void *data)
+{
+  const auto *clipboardData = static_cast<const ClipboardChunk *>(data);
+  const char *chunk = clipboardData->m_chunk;
+  ClipboardID id = chunk[0];
+  uint32_t sequence;
+  std::memcpy(&sequence, &chunk[1], 4);
+  uint8_t mark = chunk[5];
+  std::string dataChunk(&chunk[6], clipboardData->m_dataSize);
+
+  writer.enqueue(dataChunk.size() + s_clipboardChunkMetaSize, [stream, id, sequence, mark, dataChunk] {
+    ProtocolUtil::writef(stream, kMsgDClipboard, id, sequence, mark, &dataChunk);
+  });
 }

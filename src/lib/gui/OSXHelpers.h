@@ -16,6 +16,8 @@ bool showOSXNotification(const QString &title, const QString &body);
 bool isOSXInterfaceStyleDark();
 void forceAppActive();
 void macOSNativeHide();
+//! Add or remove Deskflow as a login item, a login item turned off in System Settings is left off
+void setLaunchAtLogin(bool enabled);
 void installQuitHandler(std::function<bool()> shouldQuit);
 
 /**

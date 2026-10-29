@@ -13,7 +13,11 @@
 #include "deskflow/ClipboardTypes.h"
 #include "deskflow/KeyTypes.h"
 
+#include <memory>
+
 class Client;
+class FileTransfer;
+class PacedStreamWriter;
 class ClientInfo;
 class EventQueueTimer;
 class IClipboard;
@@ -102,6 +106,7 @@ private:
   void mouseMove();
   void mouseRelativeMove();
   void mouseWheel();
+  void touchpadGesture();
   void screensaver();
   void resetOptions();
   void setOptions();
@@ -134,4 +139,7 @@ private:
   IEventQueue *m_events = nullptr;
   std::string m_clipboardDataCached;
   ClipboardChunkAssemblyState m_clipboardChunkState;
+  std::unique_ptr<PacedStreamWriter> m_writer;
+  // declared after m_writer, which it uses, so it is destroyed first
+  std::unique_ptr<FileTransfer> m_files;
 };

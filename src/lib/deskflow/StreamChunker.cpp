@@ -11,7 +11,8 @@
 #include "base/Log.h"
 #include "deskflow/ClipboardChunk.h"
 
-static const size_t g_chunkSize = 512 * 1024; // 512kb
+// small enough that a chunk ahead of a mouse move doesn't delay it noticeably
+static const size_t g_chunkSize = 64 * 1024; // 64kb
 
 void StreamChunker::sendClipboard(
     const std::string_view &data, size_t size, ClipboardID id, uint32_t sequence, IEventQueue *events, void *eventTarget

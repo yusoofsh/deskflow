@@ -10,6 +10,7 @@ class ServerConfigTests : public QObject
 {
   Q_OBJECT
 private Q_SLOTS:
+  void initTestCase();
   void equalityCheck();
   void equalityCheck_diff_options();
   void equalityCheck_diff_alias();
@@ -18,4 +19,9 @@ private Q_SLOTS:
   void equalityCheck_diff_neighbours1();
   void equalityCheck_diff_neighbours2();
   void equalityCheck_diff_neighbours3();
+  void touchpadGesturesWithoutOptionsSection();
+
+private:
+  inline static const QString m_settingsFile = QStringLiteral("tmp/test/Deskflow.conf");
+  inline static const QString m_stateFile = QStringLiteral("tmp/test/Deskflow.state");
 };

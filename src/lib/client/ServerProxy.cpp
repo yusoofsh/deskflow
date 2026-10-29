@@ -14,7 +14,10 @@
 #include "deskflow/Clipboard.h"
 #include "deskflow/ClipboardChunk.h"
 #include "deskflow/DeskflowException.h"
+#include "deskflow/FileClipboard.h"
+#include "deskflow/FileTransfer.h"
 #include "deskflow/OptionTypes.h"
+#include "deskflow/PacedStreamWriter.h"
 #include "deskflow/ProtocolTypes.h"
 #include "deskflow/ProtocolUtil.h"
 #include "deskflow/StreamChunker.h"
@@ -42,8 +45,11 @@ ServerProxy::ServerProxy(Client *client, deskflow::IStream *stream, IEventQueue 
   m_events->addHandler(EventTypes::StreamInputReady, m_stream->getEventTarget(), [this](const auto &) {
     handleData();
   });
+  // bulk data is paced so input from the server never waits behind it
+  m_writer = std::make_unique<PacedStreamWriter>(m_stream, m_events);
+  m_files = std::make_unique<FileTransfer>(m_stream, *m_writer);
   m_events->addHandler(EventTypes::ClipboardSending, this, [this](const auto &e) {
-    ClipboardChunk::send(m_stream, e.getDataObject());
+    ClipboardChunk::sendPaced(*m_writer, m_stream, e.getDataObject());
   });
 
   // send heartbeat
@@ -217,6 +223,10 @@ ServerProxy::ConnectionResult ServerProxy::parseMessage(const uint8_t *code)
 {
   using enum ConnectionResult;
 
+  if (m_files->handleMessage(code)) {
+    return Okay;
+  }
+
   if (memcmp(code, kMsgDMouseMove, 4) == 0) {
     mouseMove();
   }
@@ -227,6 +237,10 @@ ServerProxy::ConnectionResult ServerProxy::parseMessage(const uint8_t *code)
 
   else if (memcmp(code, kMsgDMouseWheel, 4) == 0) {
     mouseWheel();
+  }
+
+  else if (memcmp(code, kMsgDTouchpadGesture, 4) == 0) {
+    touchpadGesture();
   }
 
   else if (memcmp(code, kMsgDKeyDown1_1, 4) == 0) {
@@ -366,6 +380,10 @@ void ServerProxy::onClipboardChanged(ClipboardID id, const IClipboard *clipboard
 {
   std::string data = IClipboard::marshall(clipboard);
   LOG_DEBUG("sending clipboard %d seqnum=%d", id, m_seqNum);
+
+  // the server can fetch the files on this clipboard, and nothing else
+  if (id == kClipboardClipboard)
+    m_files->offer(deskflow::fileclipboard::copiedPaths(*clipboard));
 
   StreamChunker::sendClipboard(data, data.size(), id, m_seqNum, m_events, this);
 }
@@ -544,12 +562,29 @@ void ServerProxy::setClipboard()
   } else if (r == TransferState::Finished) {
     LOG_DEBUG("received clipboard %d size=%zu", id, m_clipboardDataCached.size());
 
-    // forward
     Clipboard clipboard;
     clipboard.unmarshall(m_clipboardDataCached, 0);
-    m_client->setClipboard(id, &clipboard);
     m_clipboardDataCached.clear();
     m_clipboardDataCached.shrink_to_fit();
+
+    // copied files stay on the server until they are fetched, the paths mean nothing here
+    const QStringList copied = deskflow::fileclipboard::copiedPaths(clipboard);
+    if (id == kClipboardClipboard && !copied.isEmpty()) {
+      m_files->fetch(copied, [this, id](const QStringList &localPaths) {
+        if (localPaths.isEmpty())
+          return;
+        Clipboard files;
+        deskflow::fileclipboard::setCopiedPaths(files, localPaths);
+        m_client->setClipboard(id, &files);
+        LOG_INFO("clipboard was updated with copied files");
+      });
+      return;
+    }
+
+    if (id == kClipboardClipboard)
+      m_files->cancelFetch();
+    deskflow::fileclipboard::removeCopiedPaths(clipboard);
+    m_client->setClipboard(id, &clipboard);
 
     LOG_INFO("clipboard was updated");
   } else if (r == TransferState::Error) {
@@ -726,6 +761,30 @@ void ServerProxy::mouseWheel()
   m_client->mouseWheel(xDelta, yDelta);
 }
 
+void ServerProxy::touchpadGesture()
+{
+  flushCompressedMouse();
+
+  uint8_t phase;
+  uint8_t fingers;
+  int16_t dx;
+  int16_t dy;
+  ProtocolUtil::readf(m_stream, kMsgDTouchpadGesture + 4, &phase, &fingers, &dx, &dy);
+  LOG_VERBOSE("recv touchpad gesture phase=%d fingers=%d %+d,%+d", phase, fingers, dx, dy);
+
+  using enum TouchpadGesture::Phase;
+  if (phase < static_cast<uint8_t>(Begin) || phase > static_cast<uint8_t>(Cancel)) {
+    return;
+  }
+
+  TouchpadGesture gesture;
+  gesture.phase = static_cast<TouchpadGesture::Phase>(phase);
+  gesture.fingers = fingers;
+  gesture.dx = dx;
+  gesture.dy = dy;
+  m_client->touchpadGesture(gesture);
+}
+
 void ServerProxy::screensaver()
 {
   // parse
@@ -787,6 +846,9 @@ void ServerProxy::setOptions()
     } else if (options[i] == kOptionHeartbeat) {
       // update keep alive
       setKeepAliveRate(1.0e-3 * static_cast<double>(options[i + 1]));
+    } else if (options[i] == kOptionTouchpadGestures && options[i + 1] != 0 && m_client->canReplayTouchpadGestures()) {
+      LOG_DEBUG("server forwards touchpad gestures, replaying them here");
+      ProtocolUtil::writef(m_stream, kMsgCTouchpadGestures);
     }
 
     if (id != kKeyModifierIDNull) {

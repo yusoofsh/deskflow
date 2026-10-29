@@ -54,6 +54,8 @@ add_library(${target} STATIC
   core/CoreProcess.h
   core/NetworkMonitor.cpp
   core/NetworkMonitor.h
+  core/TouchpadSwipeSettings.cpp
+  core/TouchpadSwipeSettings.h
   dialogs/AboutDialog.cpp
   dialogs/AboutDialog.h
   dialogs/AboutDialog.ui
@@ -137,5 +139,5 @@ target_link_libraries(${target}
 )
 
 if(APPLE)
-  target_link_libraries(${target} PRIVATE "-framework CoreAudio")
+  target_link_libraries(${target} PRIVATE "-framework CoreAudio" "-framework ServiceManagement")
 endif()

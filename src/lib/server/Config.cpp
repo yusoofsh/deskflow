@@ -392,6 +392,11 @@ bool Config::hasLockToComputerAction() const
   return m_hasLockToComputerAction;
 }
 
+void Config::setHasLockToComputerAction()
+{
+  m_hasLockToComputerAction = true;
+}
+
 bool Config::operator==(const Config &x) const
 {
   if (m_deskflowAddress != x.m_deskflowAddress) {
@@ -463,6 +468,8 @@ void Config::read(ConfigReadContext &context)
   while (context.getStream()) {
     tmp.readSection(context);
   }
+  // only a setting, so it applies even to files without an options section
+  tmp.addOption("", kOptionTouchpadGestures, Settings::value(Settings::Server::TouchpadGestures).toBool());
   *this = tmp;
 }
 

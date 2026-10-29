@@ -171,7 +171,8 @@ HKL AppUtilWindows::getCurrentKeyboardLayout() const
   if (GetGUIThreadInfo(0, &gti) && gti.hwndActive) {
     layout = GetKeyboardLayout(GetWindowThreadProcessId(gti.hwndActive, nullptr));
   } else {
-    LOG_WARN("failed to determine current keyboard layout");
+    // expected on the sign in and lock screens, which have no active window
+    LOG_DEBUG("failed to determine current keyboard layout, no active window");
   }
 
   return layout;

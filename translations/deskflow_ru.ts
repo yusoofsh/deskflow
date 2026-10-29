@@ -1068,12 +1068,6 @@ Additionally, check you are able to %1 the server config file: %2</source>
         <translation>Переключать по двойному &amp;касанию за</translation>
     </message>
     <message>
-        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
-
-Enabling this setting will disable the server config GUI.</source>
-        <translation>Используйте файл конфигурации для сложных макетов. Включение этой опции отключит графический редактор.</translation>
-    </message>
-    <message>
         <source>Use a server config file</source>
         <translation>Использовать файл конфигурации сервера</translation>
     </message>
@@ -1093,6 +1087,16 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Enable lock to computer at startup</source>
         <translation>Включать привязку к компьютеру при запуске</translation>
+    </message>
+    <message>
+        <source>A server config file sets how these computers connect, so moving them here changes nothing. Double-click a computer to change its settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
+
+The file sets how computers connect. Computer settings and hotkeys from this dialog still apply.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1288,6 +1292,10 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Remove all settings</source>
         <translation type="unfinished">Удалить все настройки</translation>
+    </message>
+    <message>
+        <source>Start Deskflow when you log in</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

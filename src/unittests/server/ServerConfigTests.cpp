@@ -7,7 +7,12 @@
 
 #include "ServerConfigTests.h"
 
+#include "common/Settings.h"
 #include "server/Config.h"
+
+#include <QFile>
+
+#include <sstream>
 
 class OnlySystemFilter : public InputFilter::Condition
 {
@@ -29,6 +34,13 @@ public:
 };
 
 using namespace deskflow::server;
+
+void ServerConfigTests::initTestCase()
+{
+  QFile::remove(m_settingsFile);
+  Settings::setSettingsFile(m_settingsFile);
+  Settings::setStateFile(m_stateFile);
+}
 
 void ServerConfigTests::equalityCheck()
 {
@@ -159,6 +171,24 @@ void ServerConfigTests::equalityCheck_diff_neighbours3()
   QVERIFY(b.addComputer("computerC"));
   QVERIFY(b.connect("computerA", Direction::Bottom, 0.0f, 0.5f, "computerC", 0.5f, 1.0f));
   QVERIFY(a != b);
+}
+
+void ServerConfigTests::touchpadGesturesWithoutOptionsSection()
+{
+  const auto readLinksOnly = [] {
+    std::istringstream layout("section: links\nend\n");
+    Config config(nullptr);
+    layout >> config;
+    const auto *options = config.getOptions("");
+    return (options != nullptr && options->contains(kOptionTouchpadGestures)) ? options->at(kOptionTouchpadGestures)
+                                                                              : -1;
+  };
+
+  QCOMPARE(readLinksOnly(), 1);
+
+  Settings::setValue(Settings::Server::TouchpadGestures, false);
+  QCOMPARE(readLinksOnly(), 0);
+  Settings::setValue(Settings::Server::TouchpadGestures, true);
 }
 
 QTEST_MAIN(ServerConfigTests)

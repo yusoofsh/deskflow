@@ -149,6 +149,9 @@ public:
   */
   bool isConnecting() const;
 
+  //! Test if touchpad swipes from the server can be replayed here
+  bool canReplayTouchpadGestures() const;
+
   //! Get address of server
   /*!
   Returns the address of the server the client is connected (or wants
@@ -185,6 +188,7 @@ public:
   void mouseMove(int32_t xAbs, int32_t yAbs) override;
   void mouseRelativeMove(int32_t xRel, int32_t yRel) override;
   void mouseWheel(int32_t xDelta, int32_t yDelta) override;
+  void touchpadGesture(const TouchpadGesture &gesture) override;
   void screensaver(bool activate) override;
   void resetOptions() override;
   void setOptions(const OptionsList &options) override;

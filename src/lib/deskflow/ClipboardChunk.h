@@ -18,6 +18,7 @@ constexpr static auto s_clipboardChunkMetaSize = 7;
 namespace deskflow {
 class IStream;
 }
+class PacedStreamWriter;
 
 struct ClipboardChunkAssemblyState
 {
@@ -40,6 +41,14 @@ public:
   );
 
   static void send(deskflow::IStream *stream, void *data);
+
+  /**
+   * @brief Queue a chunk on a paced writer so input messages can pass it
+   * @param writer Writer for the connection's bulk data
+   * @param stream Stream the chunk is written to
+   * @param data ClipboardChunk from a ClipboardSending event, copied because the event frees it
+   */
+  static void sendPaced(PacedStreamWriter &writer, deskflow::IStream *stream, const void *data);
 
   static size_t getExpectedSize(const ClipboardChunkAssemblyState &state)
   {

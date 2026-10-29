@@ -9,11 +9,14 @@
 
 #include "arch/ArchException.h"
 #include "base/Log.h"
+#include "deskflow/FileClipboard.h"
 #include "platform/OSXClipboardBMPConverter.h"
 #include "platform/OSXClipboardHTMLConverter.h"
 #include "platform/OSXClipboardTextConverter.h"
 #include "platform/OSXClipboardUTF16Converter.h"
 #include "platform/OSXClipboardUTF8Converter.h"
+
+#include <climits>
 
 //
 // OSXClipboard
@@ -81,6 +84,11 @@ void OSXClipboard::add(Format format, const std::string &data)
     return;
 
   LOG_DEBUG("add %d bytes to clipboard format: %d", data.size(), format);
+
+  if (format == IClipboard::Format::Files) {
+    addFiles(data);
+    return;
+  }
   if (format == IClipboard::Format::Text) {
     LOG_DEBUG("format of data to be added to clipboard was kText");
   } else if (format == IClipboard::Format::Bitmap) {
@@ -136,6 +144,9 @@ bool OSXClipboard::has(Format format) const
   if (m_pboard == nullptr)
     return false;
 
+  if (format == IClipboard::Format::Files)
+    return hasFiles();
+
   PasteboardItemID item;
   PasteboardGetItemIdentifier(m_pboard, (CFIndex)1, &item);
 
@@ -164,6 +175,9 @@ std::string OSXClipboard::get(Format format) const
 
   if (m_pboard == nullptr)
     return result;
+
+  if (format == IClipboard::Format::Files)
+    return getFiles();
 
   PasteboardGetItemIdentifier(m_pboard, (CFIndex)1, &item);
 
@@ -219,4 +233,84 @@ void OSXClipboard::clearConverters()
     delete *index;
   }
   m_converters.clear();
+}
+
+namespace {
+const CFStringRef kFileUrlFlavor = CFSTR("public.file-url");
+} // namespace
+
+bool OSXClipboard::hasFiles() const
+{
+  ItemCount count = 0;
+  if (PasteboardGetItemCount(m_pboard, &count) != noErr)
+    return false;
+
+  for (CFIndex index = 1; index <= static_cast<CFIndex>(count); ++index) {
+    PasteboardItemID item;
+    PasteboardFlavorFlags flags;
+    if (PasteboardGetItemIdentifier(m_pboard, index, &item) == noErr &&
+        PasteboardGetItemFlavorFlags(m_pboard, item, kFileUrlFlavor, &flags) == noErr) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::string OSXClipboard::getFiles() const
+{
+  ItemCount count = 0;
+  if (PasteboardGetItemCount(m_pboard, &count) != noErr)
+    return {};
+
+  QStringList paths;
+  for (CFIndex index = 1; index <= static_cast<CFIndex>(count); ++index) {
+    PasteboardItemID item;
+    CFDataRef data = nullptr;
+    if (PasteboardGetItemIdentifier(m_pboard, index, &item) != noErr ||
+        PasteboardCopyItemFlavorData(m_pboard, item, kFileUrlFlavor, &data) != noErr) {
+      continue;
+    }
+
+    // Finder may copy file reference URLs (file:///.file/id=...), so resolve them to paths
+    CFURLRef url = CFURLCreateWithBytes(
+        kCFAllocatorDefault, CFDataGetBytePtr(data), CFDataGetLength(data), kCFStringEncodingUTF8, nullptr
+    );
+    CFRelease(data);
+    if (url == nullptr)
+      continue;
+    CFURLRef pathUrl = CFURLCreateFilePathURL(kCFAllocatorDefault, url, nullptr);
+    CFRelease(url);
+    if (pathUrl == nullptr)
+      continue;
+
+    char path[PATH_MAX];
+    if (CFURLGetFileSystemRepresentation(pathUrl, true, reinterpret_cast<UInt8 *>(path), sizeof(path)))
+      paths.append(QString::fromUtf8(path));
+    CFRelease(pathUrl);
+  }
+  return deskflow::fileclipboard::encodePaths(paths);
+}
+
+void OSXClipboard::addFiles(const std::string &data)
+{
+  const QStringList paths = deskflow::fileclipboard::decodePaths(data);
+  for (qsizetype index = 0; index < paths.size(); ++index) {
+    const QByteArray path = paths[index].toUtf8();
+    CFURLRef url = CFURLCreateFromFileSystemRepresentation(
+        kCFAllocatorDefault, reinterpret_cast<const UInt8 *>(path.constData()), path.size(), false
+    );
+    if (url == nullptr)
+      continue;
+
+    CFStringRef urlString = CFURLGetString(url);
+    CFDataRef urlData = CFStringCreateExternalRepresentation(kCFAllocatorDefault, urlString, kCFStringEncodingUTF8, 0);
+    if (urlData != nullptr) {
+      // one item per file, which is how Finder copies several files
+      const auto item = reinterpret_cast<PasteboardItemID>(static_cast<uintptr_t>(index + 1));
+      PasteboardPutItemFlavor(m_pboard, item, kFileUrlFlavor, urlData, kPasteboardFlavorNoFlags);
+      CFRelease(urlData);
+    }
+    CFRelease(url);
+  }
+  LOG_DEBUG("added %d copied file(s) to clipboard", static_cast<int>(paths.size()));
 }

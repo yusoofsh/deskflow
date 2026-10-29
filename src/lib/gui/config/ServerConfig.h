@@ -48,6 +48,7 @@ public:
   bool save(const QString &fileName) const;
   bool computerExists(const QString &computerName) const;
   void save(QFile &file) const;
+  bool saveExternalConfigWithHotkeys(QFile &file) const;
   bool isFull() const;
   void commit();
   int numComputers() const;
@@ -60,6 +61,7 @@ public:
 private:
   void recall();
   void setupComputers();
+  void addMissingKnownComputers();
   QSettingsProxy &settings();
   ComputerList &computers()
   {

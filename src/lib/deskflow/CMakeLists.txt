@@ -29,6 +29,8 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   App.h
   AppUtil.cpp
   AppUtil.h
+  BrightnessKeyTracker.cpp
+  BrightnessKeyTracker.h
   Chunk.cpp
   Chunk.h
   ClientApp.cpp
@@ -45,6 +47,10 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   DisplayException.cpp
   DisplayException.h
   DisplayInvalidException.h
+  FileClipboard.cpp
+  FileClipboard.h
+  FileTransfer.cpp
+  FileTransfer.h
   IApp.h
   IClient.h
   IClipboard.cpp
@@ -65,6 +71,8 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   KeyState.h
   MouseTypes.h
   OptionTypes.h
+  PacedStreamWriter.cpp
+  PacedStreamWriter.h
   PacketStreamFilter.cpp
   PacketStreamFilter.h
   PlatformComputer.cpp
@@ -77,6 +85,9 @@ add_library(${lib_name} STATIC ${PLATFORM_CODE}
   ServerApp.h
   StreamChunker.cpp
   StreamChunker.h
+  TouchpadGesture.h
+  TouchpadGestureTracker.cpp
+  TouchpadGestureTracker.h
   KeyboardLayoutManager.cpp
   KeyboardLayoutManager.h
   ipc/IpcServer.cpp

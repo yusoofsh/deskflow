@@ -308,6 +308,16 @@ void Client::mouseWheel(int32_t xDelta, int32_t yDelta)
   m_computer->mouseWheel(xDelta, yDelta);
 }
 
+void Client::touchpadGesture(const TouchpadGesture &gesture)
+{
+  m_computer->touchpadGesture(gesture);
+}
+
+bool Client::canReplayTouchpadGestures() const
+{
+  return m_computer != nullptr && m_computer->canReplayTouchpadGestures();
+}
+
 void Client::screensaver(bool activate)
 {
   m_computer->screensaver(activate);

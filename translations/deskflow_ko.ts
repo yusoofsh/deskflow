@@ -1068,14 +1068,6 @@ Additionally, check you are able to %1 the server config file: %2</source>
         <translation>지정 시간 내 더블 탭으로 전환(&amp;T)</translation>
     </message>
     <message>
-        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
-
-Enabling this setting will disable the server config GUI.</source>
-        <translation>격자 기반 레이아웃 편집기로는 만들 수 없는 복잡한 컴퓨터 배치를 구성하려면 서버 설정 파일을 사용하세요.
-
-이 설정을 활성화하면 서버 설정 GUI가 비활성화됩니다.</translation>
-    </message>
-    <message>
         <source>Use a server config file</source>
         <translation>서버 설정 파일 사용</translation>
     </message>
@@ -1095,6 +1087,16 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Enable lock to computer at startup</source>
         <translation>시작 시 컴퓨터 잠금 사용</translation>
+    </message>
+    <message>
+        <source>A server config file sets how these computers connect, so moving them here changes nothing. Double-click a computer to change its settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
+
+The file sets how computers connect. Computer settings and hotkeys from this dialog still apply.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1290,6 +1292,10 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Remove all settings</source>
         <translation type="unfinished">모든 설정 제거</translation>
+    </message>
+    <message>
+        <source>Start Deskflow when you log in</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

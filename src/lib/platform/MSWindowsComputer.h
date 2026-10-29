@@ -9,10 +9,12 @@
 #pragma once
 
 #include "deskflow/PlatformComputer.h"
+#include "deskflow/TouchpadGesture.h"
 #include "platform/MSWindowsHook.h"
 #include "platform/MSWindowsPowerManager.h"
 
 #include <map>
+#include <memory>
 #include <string>
 
 #define WIN32_LEAN_AND_MEAN
@@ -23,7 +25,9 @@ class MSWindowsDesks;
 class MSWindowsKeyState;
 class MSWindowsScreenSaver;
 class Thread;
+class MSWindowsBrightness;
 class MSWindowsDropTarget;
+class MSWindowsTouchpad;
 
 //! Implementation of IPlatformComputer for Microsoft Windows
 class MSWindowsComputer : public PlatformComputer
@@ -171,6 +175,8 @@ private: // HACK
   bool onMouseButton(WPARAM, LPARAM);
   bool onMouseMove(int32_t x, int32_t y);
   bool onMouseWheel(int32_t xDelta, int32_t yDelta);
+  void onTouchpadGesture(const TouchpadGesture &gesture);
+  void onBrightnessKey(KeyID key);
   bool onScreensaver(bool activated);
   bool onDisplayChange();
   void onClipboardChange();
@@ -327,6 +333,12 @@ private:
   MOUSEKEYS m_mouseKeys;
 
   MSWindowsHook m_hook;
+
+  // reads swipes from the touchpad, primary only
+  std::unique_ptr<MSWindowsTouchpad> m_touchpad;
+
+  // turns the display's brightness keys into keys for clients, primary only
+  std::unique_ptr<MSWindowsBrightness> m_brightness;
 
   static MSWindowsComputer *s_computer;
 

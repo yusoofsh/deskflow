@@ -18,6 +18,7 @@
 #include "deskflow/PacketStreamFilter.h"
 #include "deskflow/ProtocolTypes.h"
 #include "deskflow/StreamChunker.h"
+#include "deskflow/TouchpadGesture.h"
 #include "deskflow/ipc/CoreIpc.h"
 #include "net/TCPSocket.h"
 #include "server/ClientListener.h"
@@ -91,6 +92,10 @@ Server::Server(ServerConfig &config, PrimaryClient *primaryClient, deskflow::Com
     handleWheelEvent(e);
   });
   m_events->addHandler(
+      EventTypes::PrimaryComputerTouchpadGesture, m_primaryClient->getEventTarget(),
+      [this](const auto &e) { handleTouchpadGestureEvent(e); }
+  );
+  m_events->addHandler(
       EventTypes::PrimaryScreenSaverActivated, m_primaryClient->getEventTarget(),
       [this](const auto &) { onScreensaver(true); }
   );
@@ -152,6 +157,10 @@ Server::Server(ServerConfig &config, PrimaryClient *primaryClient, deskflow::Com
 
 Server::~Server()
 {
+  if (m_touchpadGesturesForwarded) {
+    ipcSendToClient(QStringLiteral("touchpadGestures"), QStringLiteral("local"));
+  }
+
   // remove event handlers and timers
   using enum EventTypes;
   m_events->removeHandler(KeyStateKeyDown, m_inputFilter);
@@ -162,6 +171,7 @@ Server::~Server()
   m_events->removeHandler(PrimaryComputerMotionOnPrimary, m_primaryClient->getEventTarget());
   m_events->removeHandler(PrimaryComputerMotionOnSecondary, m_primaryClient->getEventTarget());
   m_events->removeHandler(PrimaryComputerWheel, m_primaryClient->getEventTarget());
+  m_events->removeHandler(PrimaryComputerTouchpadGesture, m_primaryClient->getEventTarget());
   m_events->removeHandler(PrimaryScreenSaverActivated, m_primaryClient->getEventTarget());
   m_events->removeHandler(PrimaryScreenSaverDeactivated, m_primaryClient->getEventTarget());
   m_events->removeHandler(PrimaryComputerFakeInputBegin, m_inputFilter);
@@ -228,6 +238,9 @@ bool Server::setConfig(const ServerConfig &config)
     InputFilter::Rule rule(new InputFilter::KeystrokeCondition(m_events, key));
     rule.adoptAction(new InputFilter::LockCursorToComputerAction(m_events), true);
     m_inputFilter->addFilterRule(rule);
+
+    // the config outlives this server when it restarts after sleep, so only add the rule once
+    m_config->setHasLockToComputerAction();
   }
 
   // tell primary computer about reconfiguration
@@ -485,6 +498,7 @@ void Server::switchComputer(BaseClientProxy *dst, int32_t x, int32_t y, bool for
 
     // cut over
     m_active = dst;
+    updateTouchpadGestureForwarding();
 
     // increment enter sequence number
     ++m_seqNum;
@@ -1112,6 +1126,8 @@ void Server::processOptions()
       if (!m_enableClipboard) {
         LOG_INFO("clipboard sharing is disabled");
       }
+    } else if (id == kOptionTouchpadGestures) {
+      m_enableTouchpadGestures = (value != 0);
     } else if (id == kOptionClipboardSharingSize) {
       if (value <= 0) {
         m_maximumClipboardSize = 0;
@@ -1271,6 +1287,11 @@ void Server::handleWheelEvent(const Event &event)
 {
   const auto *info = static_cast<IPlatformComputer::WheelInfo *>(event.getData());
   onMouseWheel(info->m_xDelta, info->m_yDelta);
+}
+
+void Server::handleTouchpadGestureEvent(const Event &event)
+{
+  onTouchpadGesture(*static_cast<const TouchpadGesture *>(event.getData()));
 }
 
 void Server::handleSwitchWaitTimeout()
@@ -1886,6 +1907,24 @@ void Server::onMouseWheel(int32_t xDelta, int32_t yDelta)
   m_active->mouseWheel(xDelta, yDelta);
 }
 
+void Server::onTouchpadGesture(const TouchpadGesture &gesture)
+{
+  if (m_touchpadGesturesForwarded) {
+    m_active->touchpadGesture(gesture);
+  }
+}
+
+void Server::updateTouchpadGestureForwarding()
+{
+  const bool forward = m_enableTouchpadGestures && m_active != m_primaryClient && m_active->acceptsTouchpadGestures();
+  if (forward == m_touchpadGesturesForwarded) {
+    return;
+  }
+  m_touchpadGesturesForwarded = forward;
+  LOG_DEBUG("touchpad gestures %s", forward ? "forwarded to the active client" : "stay on this computer");
+  ipcSendToClient(QStringLiteral("touchpadGestures"), forward ? QStringLiteral("forward") : QStringLiteral("local"));
+}
+
 bool Server::addClient(BaseClientProxy *client)
 {
   std::string name = getName(client);
@@ -2044,6 +2083,7 @@ void Server::forceLeaveClient(const BaseClientProxy *client)
 
     // cut over
     m_active = m_primaryClient;
+    updateTouchpadGestureForwarding();
 
     // enter new computer (unless we already have because of the
     // screen saver)

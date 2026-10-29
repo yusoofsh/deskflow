@@ -27,6 +27,7 @@
 #include "mt/Mutex.h"
 #include "mt/Thread.h"
 #include "platform/OSXClipboard.h"
+#include "platform/OSXDockSwipe.h"
 #include "platform/OSXEventQueueBuffer.h"
 #include "platform/OSXKeyState.h"
 #include "platform/OSXMediaKeySupport.h"
@@ -40,6 +41,7 @@
 #include <libproc.h>
 #include <mach-o/dyld.h>
 #include <math.h>
+#include <time.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -75,6 +77,179 @@ void setZeroSuppressionInterval();
 void avoidSupression();
 void logCursorVisibility();
 void avoidHesitatingCursor();
+
+//
+// OSXScrollSmoother
+//
+
+// Wheel deltas reach the client in bursts when the network jitters, so posting each
+// one on arrival makes scrolling stutter. Deltas are instead added to a pending total
+// that a display rate timer drains a fraction at a time, and they are posted as a
+// trackpad style gesture (began, changed, ended) so apps scroll them like a trackpad.
+class OSXScrollSmoother
+{
+public:
+  OSXScrollSmoother()
+      : m_queue(dispatch_queue_create(
+            "org.deskflow.scroll",
+            dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INTERACTIVE, 0)
+        ))
+  {
+  }
+
+  ~OSXScrollSmoother()
+  {
+    dispatch_sync(m_queue, ^{
+      stopTimer();
+    });
+    dispatch_release(m_queue);
+  }
+
+  OSXScrollSmoother(const OSXScrollSmoother &) = delete;
+  OSXScrollSmoother &operator=(const OSXScrollSmoother &) = delete;
+
+  //! Queue a scroll of \c x, \c y pixels, safe to call from any thread
+  void add(double x, double y, CGEventFlags flags)
+  {
+    dispatch_async(m_queue, ^{
+      m_pendingX += x;
+      m_pendingY += y;
+      m_flags = flags;
+      m_lastInput = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+      if (m_timer == nullptr) {
+        startTimer();
+      }
+    });
+  }
+
+private:
+  // No input for this long ends the gesture.
+  static constexpr uint64_t s_gestureEndNanos = 120 * NSEC_PER_MSEC;
+
+  // The drain timer free runs against the display clock, so ticking twice a frame keeps
+  // a frame from getting no update when the two drift into phase.
+  static constexpr double s_ticksPerFrame = 2.0;
+
+  // Time constant of the smoothing. Larger is smoother but lags more. Simulated with the
+  // measured hotspot jitter, 16 ms at two ticks a frame cut frame to frame jerk by about
+  // 40% against posting on arrival. Tune without a rebuild, 0 turns smoothing off:
+  //   defaults write org.deskflow.deskflow scrollSmoothingMs -float 16
+  static double smoothingSeconds()
+  {
+    double ms = 16.0;
+    const auto appId = CFSTR("org.deskflow.deskflow");
+    CFPreferencesAppSynchronize(appId);
+    if (CFPropertyListRef value = CFPreferencesCopyAppValue(CFSTR("scrollSmoothingMs"), appId); value != nullptr) {
+      if (CFGetTypeID(value) == CFNumberGetTypeID()) {
+        CFNumberGetValue(static_cast<CFNumberRef>(value), kCFNumberDoubleType, &ms);
+      }
+      CFRelease(value);
+    }
+    return fmin(fmax(ms, 0.0), 100.0) / 1000.0;
+  }
+
+  static double displayRefreshRate()
+  {
+    // the display under the cursor is the one showing the scroll
+    CGDirectDisplayID display = CGMainDisplayID();
+    if (CGEventRef event = CGEventCreate(nullptr); event != nullptr) {
+      uint32_t count = 0;
+      CGGetDisplaysWithPoint(CGEventGetLocation(event), 1, &display, &count);
+      CFRelease(event);
+    }
+    double rate = 0.0;
+    if (CGDisplayModeRef mode = CGDisplayCopyDisplayMode(display); mode != nullptr) {
+      rate = CGDisplayModeGetRefreshRate(mode);
+      CGDisplayModeRelease(mode);
+    }
+    // built in panels report 0, so assume a fast one rather than skip frames
+    return rate >= 30.0 && rate <= 240.0 ? rate : 120.0;
+  }
+
+  void startTimer()
+  {
+    const double interval = 1.0 / (s_ticksPerFrame * displayRefreshRate());
+    const double smoothing = smoothingSeconds();
+    m_drainFraction = smoothing > 0.0 ? 1.0 - exp(-interval / smoothing) : 1.0;
+    const auto intervalNanos = static_cast<uint64_t>(interval * NSEC_PER_SEC);
+    // strict with no leeway, so the system does not coalesce ticks to save power
+    m_timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, DISPATCH_TIMER_STRICT, m_queue);
+    dispatch_source_set_timer(m_timer, dispatch_time(DISPATCH_TIME_NOW, 0), intervalNanos, 0);
+    dispatch_source_set_event_handler(m_timer, ^{
+      tick();
+    });
+    dispatch_resume(m_timer);
+  }
+
+  void stopTimer()
+  {
+    if (m_timer != nullptr) {
+      dispatch_source_cancel(m_timer);
+      dispatch_release(m_timer);
+      m_timer = nullptr;
+    }
+  }
+
+  double drain(double &pending) const
+  {
+    // take a fraction each frame, then the rest once it is under half a pixel
+    const double step = fabs(pending) < 0.5 ? pending : pending * m_drainFraction;
+    pending -= step;
+    return step;
+  }
+
+  void tick()
+  {
+    m_remainderX += drain(m_pendingX);
+    m_remainderY += drain(m_pendingY);
+    const auto x = static_cast<int32_t>(m_remainderX);
+    const auto y = static_cast<int32_t>(m_remainderY);
+    m_remainderX -= x;
+    m_remainderY -= y;
+    if (x != 0 || y != 0) {
+      post(x, y, m_inGesture ? kCGScrollPhaseChanged : kCGScrollPhaseBegan);
+      m_inGesture = true;
+    }
+
+    const bool idle = clock_gettime_nsec_np(CLOCK_UPTIME_RAW) - m_lastInput > s_gestureEndNanos;
+    if (idle && m_pendingX == 0.0 && m_pendingY == 0.0) {
+      if (m_inGesture) {
+        post(0, 0, kCGScrollPhaseEnded);
+      }
+      m_inGesture = false;
+      m_remainderX = 0.0;
+      m_remainderY = 0.0;
+      stopTimer();
+    }
+  }
+
+  void post(int32_t x, int32_t y, CGScrollPhase phase) const
+  {
+    CGEventRef event = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitPixel, 2, y, x);
+    if (event == nullptr) {
+      return;
+    }
+    CGEventSetIntegerValueField(event, kCGScrollWheelEventIsContinuous, 1);
+    CGEventSetIntegerValueField(event, kCGScrollWheelEventScrollPhase, phase);
+
+    // Fix for sticky keys
+    CGEventSetFlags(event, m_flags);
+
+    CGEventPost(kCGHIDEventTap, event);
+    CFRelease(event);
+  }
+
+  dispatch_queue_t m_queue;
+  dispatch_source_t m_timer = nullptr;
+  double m_drainFraction = 1.0;
+  double m_pendingX = 0.0; // pixels not posted yet
+  double m_pendingY = 0.0;
+  double m_remainderX = 0.0; // fraction of a pixel carried to the next post
+  double m_remainderY = 0.0;
+  uint64_t m_lastInput = 0;
+  CGEventFlags m_flags = 0;
+  bool m_inGesture = false;
+};
 
 //
 // OSXComputer
@@ -179,6 +354,11 @@ OSXComputer::OSXComputer(IEventQueue *events, bool isPrimary, bool enableLangSyn
   m_events->addHandler(EventTypes::System, m_events->getSystemTarget(), [this](const auto &e) {
     handleSystemEvent(e);
   });
+
+  m_scrollSmoother = std::make_unique<OSXScrollSmoother>();
+  if (!m_isPrimary) {
+    m_dockSwipe = std::make_unique<OSXDockSwipe>();
+  }
 
   // install the platform event queue
   m_events->adoptBuffer(new OSXEventQueueBuffer(m_events));
@@ -624,20 +804,31 @@ void OSXComputer::fakeMouseRelativeMove(int32_t dx, int32_t dy) const
 
 void OSXComputer::fakeMouseWheel(ScrollDelta delta) const
 {
-  if (delta.x != 0 || delta.y != 0) {
-    delta = applyScrollModifier(
-        {static_cast<int32_t>(delta.x / s_scrollDelta), static_cast<int32_t>(delta.y / s_scrollDelta)}
-    );
-    // create a scroll event, post it and release it.  not sure if kCGScrollEventUnitLine
-    // is the right choice here over kCGScrollEventUnitPixel
-    CGEventRef scrollEvent = CGEventCreateScrollWheelEvent(nullptr, kCGScrollEventUnitLine, 2, delta.y, delta.x);
+  if (delta.x == 0 && delta.y == 0) {
+    return;
+  }
 
-    // Fix for sticky keys
-    CGEventFlags modifiers = m_keyState->getModifierStateAsOSXFlags();
-    CGEventSetFlags(scrollEvent, modifiers);
+  // Apply inversion and scale to the raw delta. Converting to whole lines first
+  // truncated the sub-step deltas sent by high resolution devices, such as precision
+  // touchpads, to zero, so scrolling from them stalled and then jumped.
+  delta = applyScrollModifier(delta);
 
-    CGEventPost(kCGHIDEventTap, scrollEvent);
-    CFRelease(scrollEvent);
+  static const double s_pixelsPerWheelStep = 40.0;
+  m_scrollSmoother->add(
+      s_pixelsPerWheelStep * delta.x / s_scrollDelta, s_pixelsPerWheelStep * delta.y / s_scrollDelta,
+      m_keyState->getModifierStateAsOSXFlags()
+  );
+}
+
+bool OSXComputer::canFakeTouchpadGestures() const
+{
+  return m_dockSwipe != nullptr && m_dockSwipe->isAvailable();
+}
+
+void OSXComputer::fakeTouchpadGesture(const TouchpadGesture &gesture)
+{
+  if (m_dockSwipe != nullptr) {
+    m_dockSwipe->handle(gesture);
   }
 }
 
@@ -827,6 +1018,8 @@ void OSXComputer::leave()
     // a client (onMouseMove reads raw deltas instead). must follow hideCursor(),
     // which re-associates. re-coupled in enter()/disable().
     CGAssociateMouseAndMouseCursorPosition(false);
+  } else if (m_dockSwipe != nullptr) {
+    m_dockSwipe->cancel();
   }
 
   // now off computer

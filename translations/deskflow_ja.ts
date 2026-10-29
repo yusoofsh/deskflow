@@ -1070,14 +1070,6 @@ Additionally, check you are able to %1 the server config file: %2</source>
         <translation>指定時間内に画面端ダブルタップで移動(&amp;T)</translation>
     </message>
     <message>
-        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
-
-Enabling this setting will disable the server config GUI.</source>
-        <translation>GUIでの単純な配置ではできないような複雑なコンピューター配置を設定したい場合は、サーバー設定ファイルを使用してください。
-
-この設定を有効にすると、サーバー設定用GUIは無効になります。</translation>
-    </message>
-    <message>
         <source>Use a server config file</source>
         <translation>サーバー設定ファイルを利用する</translation>
     </message>
@@ -1097,6 +1089,16 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Enable lock to computer at startup</source>
         <translation>起動時にコンピューター間移動のロックを有効にする</translation>
+    </message>
+    <message>
+        <source>A server config file sets how these computers connect, so moving them here changes nothing. Double-click a computer to change its settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
+
+The file sets how computers connect. Computer settings and hotkeys from this dialog still apply.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1292,6 +1294,10 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Remove all settings</source>
         <translation>すべての設定を消去する</translation>
+    </message>
+    <message>
+        <source>Start Deskflow when you log in</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -34,6 +34,8 @@ endif()
 if(WIN32)
   set(PLATFORM_SOURCES
     IMSWindowsClipboardFacade.h
+    MSWindowsBrightness.cpp
+    MSWindowsBrightness.h
     MSWindowsClipboard.cpp
     MSWindowsClipboard.h
     MSWindowsClipboardAnyTextConverter.cpp
@@ -42,6 +44,8 @@ if(WIN32)
     MSWindowsClipboardBitmapConverter.h
     MSWindowsClipboardFacade.cpp
     MSWindowsClipboardFacade.h
+    MSWindowsClipboardFilesConverter.cpp
+    MSWindowsClipboardFilesConverter.h
     MSWindowsClipboardHTMLConverter.cpp
     MSWindowsClipboardHTMLConverter.h
     MSWindowsClipboardUTF16Converter.cpp
@@ -66,6 +70,8 @@ if(WIN32)
     MSWindowsScreenSaver.h
     MSWindowsSession.cpp
     MSWindowsSession.h
+    MSWindowsTouchpad.cpp
+    MSWindowsTouchpad.h
     MSWindowsWatchdog.cpp
     MSWindowsWatchdog.h
   )
@@ -94,6 +100,8 @@ elseif(APPLE)
     OSXCocoaApp.m
     OSXComputer.h
     OSXComputer.mm
+    OSXDockSwipe.h
+    OSXDockSwipe.mm
     OSXEventQueueBuffer.cpp
     OSXEventQueueBuffer.h
     OSXKeyLayoutResource.cpp
