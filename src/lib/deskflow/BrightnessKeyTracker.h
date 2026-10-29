@@ -74,6 +74,10 @@ public:
   Action settle(double now);
 
 private:
+  // keeps \p level on the server, or the level next to it when \p level is the brightest or
+  // darkest one; gives the level to set when it's the one next to it
+  std::optional<uint8_t> hold(uint8_t level);
+
   struct Request
   {
     uint8_t level = 0;
@@ -88,6 +92,7 @@ private:
   bool systemChange(double now) const;
 
   std::vector<uint8_t> m_levels;
+  // the server's brightness, as last reported or asked for
   std::optional<uint8_t> m_level;
   bool m_onClient = false;
   bool m_displayOn = true;

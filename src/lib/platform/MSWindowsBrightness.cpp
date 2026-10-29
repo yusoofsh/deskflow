@@ -166,8 +166,10 @@ std::vector<KeyID> MSWindowsBrightness::onPowerSetting(const POWERBROADCAST_SETT
     }
     return changed.keys;
   } else if (setting.PowerSetting == kDisplayState) {
+    LOG_DEBUG("display state is %d", value);
     m_tracker.displayChanged(value == kDisplayOn, now);
   } else if (setting.PowerSetting == kPowerSource || setting.PowerSetting == kPowerSaving) {
+    LOG_DEBUG("power source or saving changed");
     m_tracker.powerChanged(now);
   }
   return {};
@@ -204,6 +206,7 @@ void MSWindowsBrightness::setLevel(const std::optional<uint8_t> &level)
   if (!level) {
     return;
   }
+  LOG_DEBUG("putting the display brightness to %d", *level);
   {
     std::scoped_lock lock(m_mutex);
     m_request = level;

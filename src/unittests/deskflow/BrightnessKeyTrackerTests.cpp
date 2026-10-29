@@ -225,11 +225,12 @@ void BrightnessKeyTrackerTests::powerEventAfterGivesTheLevelBack()
   // the same when the display dims, in reverse order for several steps
   auto dimmed = onClient(60);
   dimmed.changed(50, 100.0);
-  dimmed.changed(55, 100.05);
+  dimmed.changed(60, 100.02);
+  dimmed.changed(70, 100.05);
   dimmed.displayChanged(false, 100.1);
   settled = dimmed.settle(100.2);
   QCOMPARE(settled.keys, (Keys{kKeyBrightnessDown, kKeyBrightnessUp}));
-  QCOMPARE(settled.level, Level{55});
+  QCOMPARE(settled.level, Level{70});
 }
 
 void BrightnessKeyTrackerTests::systemChangeWhileSettlingWins()
@@ -255,6 +256,58 @@ void BrightnessKeyTrackerTests::returningRightAfterAStep()
   QVERIFY(!tracker.enter(10.1).level);
   QVERIFY(!tracker.settling());
   QVERIFY(tracker.settle(10.2).keys.empty());
+}
+
+void BrightnessKeyTrackerTests::levelPutBackIsNotReported()
+{
+  // Windows may not report the brightness put back, so every step goes from the held level
+  auto tracker = onClient(60);
+  QCOMPARE(tracker.changed(50, 10.0).keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(tracker.changed(50, 11.0).keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(tracker.changed(70, 12.0).keys, Keys{kKeyBrightnessUp});
+  QCOMPARE(tracker.changed(70, 13.0).keys, Keys{kKeyBrightnessUp});
+
+  // on the brightest level each step up reports the brightest level again
+  BrightnessKeyTracker brightest;
+  brightest.setLevels(percentLevels());
+  brightest.changed(100, 0.0);
+  QCOMPARE(brightest.leave(10.0).level, Level{99});
+  QCOMPARE(brightest.changed(100, 11.0).keys, Keys{kKeyBrightnessUp});
+  QCOMPARE(brightest.changed(100, 12.0).keys, Keys{kKeyBrightnessUp});
+  QCOMPARE(brightest.enter(13.0).level, Level{100});
+
+  // the next leave starts from the level put back, not the last one reported
+  brightest.changed(90, 20.0);
+  brightest.changed(100, 21.0);
+  QCOMPARE(brightest.leave(30.0).level, Level{99});
+  QCOMPARE(brightest.changed(90, 31.0).keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(brightest.enter(32.0).level, Level{100});
+  QCOMPARE(brightest.leave(40.0).level, Level{99});
+}
+
+void BrightnessKeyTrackerTests::systemSetsTheBrightestLevel()
+{
+  auto tracker = onClient(60);
+
+  // plugging in sets the brightness for mains power, which here is the brightest level
+  tracker.powerChanged(100.0);
+  auto plugged = tracker.changed(100, 100.5);
+  QVERIFY(plugged.keys.empty());
+  QCOMPARE(plugged.level, Level{99});
+  QVERIFY(tracker.changed(99, 100.6).keys.empty());
+
+  // so steps up still count, and the cursor coming back gives the brightest level back
+  QCOMPARE(tracker.changed(100, 110.0).keys, Keys{kKeyBrightnessUp});
+  QCOMPARE(tracker.enter(111.0).level, Level{100});
+
+  // the same when a step is taken back
+  auto settling = onClient(60);
+  settling.changed(100, 100.0);
+  settling.powerChanged(100.1);
+  auto settled = settling.settle(100.2);
+  QCOMPARE(settled.keys, Keys{kKeyBrightnessDown});
+  QCOMPARE(settled.level, Level{99});
+  QCOMPARE(settling.changed(100, 110.0).keys, Keys{kKeyBrightnessUp});
 }
 
 QTEST_MAIN(BrightnessKeyTrackerTests)
