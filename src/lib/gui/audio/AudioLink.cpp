@@ -56,10 +56,6 @@ protected:
 QSslConfiguration tlsConfiguration(const LinkTls &tls)
 {
   auto config = QSslConfiguration::defaultConfiguration();
-  // Windows: Qt 6.12 QSslServer completes TLS 1.3 handshakes but loses the peer certificate
-  // (client cert verified sent, server peerCertificate() null). TLS 1.2 uses the classic
-  // inline client certificate flow and keeps the certificate visible on all platforms.
-  config.setProtocol(QSsl::TlsV1_2);
   config.setLocalCertificateChain(QSslCertificate::fromPath(tls.certificatePath));
   if (QFile keyFile(tls.certificatePath); keyFile.open(QIODevice::ReadOnly))
     config.setPrivateKey(QSslKey(&keyFile, QSsl::Rsa));
