@@ -46,7 +46,7 @@
 	<true/>
 
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Deskflow captures audio to share your headset and computer sound with your other Deskflow computers.</string>
+	<string>Deskflow captures audio to share your computer's sound and microphone with your other Deskflow computers.</string>
 
 	<!-- Accessibility Entitlements -->
 	<key>com.apple.security.accessibility</key>

@@ -100,6 +100,26 @@ elseif(APPLE)
     if (APPLE_CODESIGN_DEV)
       configure_mac_codesign(${target})
     endif()
+
+    set(_loopback_identity "-")
+    if (APPLE_CODESIGN_DEV)
+      set(_loopback_identity "${APPLE_CODESIGN_DEV}")
+    endif()
+    include(ExternalProject)
+    ExternalProject_Add(blackhole-loopback
+      URL https://github.com/ExistentialAudio/BlackHole/archive/refs/tags/v0.7.2.tar.gz
+      URL_HASH SHA256=f046159e0bfd7aaf3b041ddec9217ce9f128dae12285cbf46a6a0b19e6e2a146
+      DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+      CONFIGURE_COMMAND ""
+      BUILD_COMMAND sh ${CMAKE_SOURCE_DIR}/deploy/mac/build-blackhole-loopback.sh <SOURCE_DIR> <BINARY_DIR> "${_loopback_identity}"
+      INSTALL_COMMAND ""
+    )
+    ExternalProject_Get_Property(blackhole-loopback BINARY_DIR)
+    add_dependencies(${target} blackhole-loopback)
+    add_custom_command(
+      TARGET ${target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory ${BINARY_DIR} $<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/BlackHole
+    )
   else()
     set_target_properties(${target} PROPERTIES MACOSX_BUNDLE FALSE)
   endif()

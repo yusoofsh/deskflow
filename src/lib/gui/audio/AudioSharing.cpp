@@ -20,10 +20,12 @@ namespace deskflow::gui::audio {
 
 namespace {
 
-// BlackHole 2ch receives the Mac's system output; BlackHole 16ch carries the headset mic back in.
-// Two devices keep the mic from looping into the captured speaker audio.
-const auto kLoopbackName = QStringLiteral("BlackHole 2ch");
-const auto kVirtualMicName = QStringLiteral("BlackHole 16ch");
+// macOS sees one "BlackHole Loopback" output and one "BlackHole Loopback" input, from two drivers.
+// Separate drivers keep the shared microphone out of the captured Mac sound.
+// Deskflow uses each driver's mirror, which macOS keeps out of the Sound menu.
+const auto kLoopbackName = QStringLiteral("BlackHole Loopback");
+const auto kSoundCaptureId = QStringLiteral("DeskflowLoopbackOut_2_UID");
+const auto kMicFeedId = QStringLiteral("DeskflowLoopbackIn_2_UID");
 
 QAudioDevice pick(const QList<QAudioDevice> &devices, const QByteArray &savedId, const QStringList &preferred)
 {
@@ -88,7 +90,7 @@ QAudioDevice AudioSharing::captureDevice(Role role)
   const auto inputs = QMediaDevices::audioInputs();
   const auto saved = Settings::value(Settings::Audio::CaptureDevice).toByteArray();
   if (role == Role::Remote)
-    return pick(inputs, saved, {kLoopbackName});
+    return pick(inputs, saved, {kSoundCaptureId});
   auto device = pick(inputs, saved, {});
   return device.isNull() ? QMediaDevices::defaultAudioInput() : device;
 }
@@ -98,15 +100,15 @@ QAudioDevice AudioSharing::playbackDevice(Role role)
   const auto outputs = QMediaDevices::audioOutputs();
   const auto saved = Settings::value(Settings::Audio::PlaybackDevice).toByteArray();
   if (role == Role::Remote)
-    return pick(outputs, saved, {kVirtualMicName});
+    return pick(outputs, saved, {kMicFeedId});
   auto device = pick(outputs, saved, {});
   return device.isNull() ? QMediaDevices::defaultAudioOutput() : device;
 }
 
 bool AudioSharing::blackHoleInstalled()
 {
-  return !pick(QMediaDevices::audioInputs(), {}, {kLoopbackName}).isNull() &&
-         !pick(QMediaDevices::audioOutputs(), {}, {kVirtualMicName}).isNull();
+  return !pick(QMediaDevices::audioInputs(), {}, {kSoundCaptureId}).isNull() &&
+         !pick(QMediaDevices::audioOutputs(), {}, {kMicFeedId}).isNull();
 }
 
 void AudioSharing::setCoreRunning(bool running)
@@ -177,9 +179,9 @@ void AudioSharing::switchSystemDevices(Role role, const QAudioDevice &capture, c
     return;
   m_savedDefaultOutput = macDefaultAudioDevice(false);
   m_savedDefaultInput = macDefaultAudioDevice(true);
-  macSetDefaultAudioDevice(false, capture.description());
+  macSetDefaultAudioDevice(false, kLoopbackName);
   if (!playback.isNull())
-    macSetDefaultAudioDevice(true, playback.description());
+    macSetDefaultAudioDevice(true, kLoopbackName);
 #else
   Q_UNUSED(role)
   Q_UNUSED(capture)
