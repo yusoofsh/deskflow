@@ -61,7 +61,6 @@ std::optional<FrameKind> sentKind(Role role);
 
 /**
  * @return How many of the oldest @p pending bytes to drop, given @p playing bytes already queued in the device.
- * Audio that arrives late or in a burst would otherwise stay that far behind for as long as the stream plays.
  */
 qsizetype staleBytes(qsizetype pending, qsizetype playing);
 
