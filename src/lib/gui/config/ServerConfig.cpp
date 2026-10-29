@@ -32,6 +32,16 @@ static const struct
 
 const int serverDefaultIndex = 7;
 
+static void writeOptionsSection(QTextStream &outStream, const HotkeyList &hotkeys)
+{
+  outStream << "section: options" << Qt::endl;
+
+  for (const Hotkey &hotkey : hotkeys)
+    outStream << hotkey;
+
+  outStream << "end" << Qt::endl << Qt::endl;
+}
+
 ServerConfig::ServerConfig(int columns, int rows) : m_computers(columns), m_columns(columns), m_rows(rows)
 {
   recall();
@@ -61,6 +71,18 @@ void ServerConfig::save(QFile &file) const
   outStream << *this;
 }
 
+bool ServerConfig::saveExternalConfigWithHotkeys(QFile &file) const
+{
+  QFile externalFile(configFile());
+  if (!externalFile.open(QIODevice::ReadOnly))
+    return false;
+
+  QTextStream outStream(&file);
+  outStream << QString::fromUtf8(externalFile.readAll()) << Qt::endl;
+  writeOptionsSection(outStream, hotkeys());
+  return true;
+}
+
 void ServerConfig::setupComputers()
 {
   computers().clear();
@@ -70,6 +92,19 @@ void ServerConfig::setupComputers()
   // Unused computers are identified by having an empty name.
   for (int i = 0; i < m_columns * m_rows; i++)
     addComputer(Computer());
+}
+
+void ServerConfig::addMissingKnownComputers()
+{
+  const auto knownComputers = Settings::knownComputers();
+  for (const auto &name : knownComputers) {
+    if (name.isEmpty() || computerExists(name))
+      continue;
+
+    Computer computer;
+    computer.loadSettings(name);
+    m_computers.addComputerByPriority(computer);
+  }
 }
 
 void ServerConfig::commit()
@@ -173,12 +208,7 @@ QTextStream &operator<<(QTextStream &outStream, const ServerConfig &config)
 
   outStream << "end" << Qt::endl << Qt::endl;
 
-  outStream << "section: options" << Qt::endl;
-
-  for (const Hotkey &hotkey : config.hotkeys())
-    outStream << hotkey;
-
-  outStream << "end" << Qt::endl << Qt::endl;
+  writeOptionsSection(outStream, config.hotkeys());
 
   return outStream;
 }

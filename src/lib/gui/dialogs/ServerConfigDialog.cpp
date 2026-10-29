@@ -103,7 +103,9 @@ void ServerConfigDialog::save()
     Settings::setValue(Settings::Computer::Aliases.arg(computerName), computer.aliases());
     Settings::setValue(Settings::Computer::Name.arg(computerName), computerName);
   }
-  Settings::removeUnknownComputers(computerNames);
+  // The server config file can link computers that are not in the grid, and it fails to load without them.
+  if (!ui->groupExternalConfig->isChecked())
+    Settings::removeUnknownComputers(computerNames);
   QDialog::accept();
 }
 
@@ -359,8 +361,8 @@ void ServerConfigDialog::onComputerRemoved()
 void ServerConfigDialog::toggleExternalConfig(bool checked)
 {
   ui->widgetExternalConfigControls->setEnabled(checked);
-  ui->tabWidget->setTabEnabled(0, !checked);
-  ui->tabWidget->setTabEnabled(1, !checked);
+  ui->label_2->setVisible(!checked);
+  ui->lblExternalConfigLayout->setVisible(checked);
   serverConfig().setUseExternalConfig(checked);
   setButtonBoxEnabledButtons();
 }
@@ -422,6 +424,10 @@ void ServerConfigDialog::loadFromConfig()
   } else {
     server->markAsServer();
   }
+
+  if (serverConfig().useExternalConfig())
+    serverConfig().addMissingKnownComputers();
+
   updateControls();
 }
 

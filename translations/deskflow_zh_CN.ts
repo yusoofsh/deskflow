@@ -1070,14 +1070,6 @@ Additionally, check you are able to %1 the server config file: %2</source>
         <translation>在指定时间内双击切换(&amp;T)</translation>
     </message>
     <message>
-        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
-
-Enabling this setting will disable the server config GUI.</source>
-        <translation>使用服务器配置文件来创建简单的网格布局编辑器无法实现的复杂计算机布局。
-
-启用此设置将禁用服务器配置 GUI。</translation>
-    </message>
-    <message>
         <source>Use a server config file</source>
         <translation>使用服务器配置文件</translation>
     </message>
@@ -1097,6 +1089,16 @@ Enabling this setting will disable the server config GUI.</source>
     <message>
         <source>Enable lock to computer at startup</source>
         <translation type="unfinished">启动时启用锁定到计算机</translation>
+    </message>
+    <message>
+        <source>A server config file sets how these computers connect, so moving them here changes nothing. Double-click a computer to change its settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
+
+The file sets how computers connect. Computer settings and hotkeys from this dialog still apply.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

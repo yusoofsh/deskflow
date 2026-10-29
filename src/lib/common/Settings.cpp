@@ -405,8 +405,14 @@ QStringList Settings::validKeys()
 
 QString Settings::serverConfigFile()
 {
-  bool useExt = value(Server::ExternalConfig).toBool();
-  return useExt ? value(Server::ExternalConfigFile).toString() : defaultValue(Server::ExternalConfigFile).toString();
+  if (!value(Server::ExternalConfig).toBool())
+    return defaultValue(Server::ExternalConfigFile).toString();
+
+  // Hotkeys made in the GUI are applied from a copy of the external file, so the external file is never rewritten.
+  if (instance()->m_settings->value(QStringLiteral("internalConfig/hotkeys/size")).toInt() > 0)
+    return QStringLiteral("%1/%2-server-merged.conf").arg(settingsPath(), kAppId);
+
+  return value(Server::ExternalConfigFile).toString();
 }
 
 bool Settings::isServerConfigFileReadable()

@@ -1076,14 +1076,6 @@ Inoltre, verifica di poter %1 il file di configurazione del server: %2</translat
         <translation>Percorso del file di configurazione</translation>
     </message>
     <message>
-        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
-
-Enabling this setting will disable the server config GUI.</source>
-        <translation>Utilizza un file di configurazione del server per creare layout di computer complessi che non sono possibili con il semplice editor di layout del computer basato su griglia.
-
-L&apos;abilitazione di questa impostazione disabiliterà l&apos;interfaccia grafica di configurazione del server.</translation>
-    </message>
-    <message>
         <source>%1 Configurations (*.conf);;All files (*.*)</source>
         <extracomment>%1 is replaced with the application names (*.conf) and (*.*) should not be translated</extracomment>
         <translation>%1 Configurazioni (*.conf);;Tutti i file (*.*)</translation>
@@ -1095,6 +1087,16 @@ L&apos;abilitazione di questa impostazione disabiliterà l&apos;interfaccia graf
     <message>
         <source>Enable lock to computer at startup</source>
         <translation type="unfinished">Abilita il blocco al computer all&apos;avvio</translation>
+    </message>
+    <message>
+        <source>A server config file sets how these computers connect, so moving them here changes nothing. Double-click a computer to change its settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
+
+The file sets how computers connect. Computer settings and hotkeys from this dialog still apply.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
