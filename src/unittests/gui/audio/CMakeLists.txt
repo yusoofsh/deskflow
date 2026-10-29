@@ -14,3 +14,10 @@ create_test(
   SOURCE AudioLinkTests.cpp
   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/gui"
 )
+
+create_test(
+  NAME StreamConverterTests
+  DEPENDS gui
+  SOURCE StreamConverterTests.cpp
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/gui"
+)

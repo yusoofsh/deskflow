@@ -7,6 +7,7 @@
 #pragma once
 
 #include "AudioProtocol.h"
+#include "StreamConverter.h"
 
 #include <QAudioDevice>
 #include <QElapsedTimer>
@@ -58,6 +59,7 @@ private:
   QAudioDevice m_playback;
   std::unique_ptr<QAudioSource> m_source;
   QIODevice *m_sourceIo = nullptr;
+  StreamConverter m_converter{streamFormat()};
   QByteArray m_captureBuffer;
   QHash<SourceId, std::shared_ptr<Stream>> m_streams;
   QTimer m_drainTimer;

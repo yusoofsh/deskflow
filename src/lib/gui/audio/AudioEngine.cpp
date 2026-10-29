@@ -36,14 +36,16 @@ void AudioEngine::start(Role role, const QAudioDevice &capture, const QAudioDevi
   if (!m_sendKind)
     return;
 
-  const auto format = streamFormat();
   if (capture.isNull()) {
     Q_EMIT error(tr("No audio input device selected"));
   } else {
-    if (!capture.isFormatSupported(format))
-      qWarning() << "audio: input" << capture.description() << "may not support 48 kHz stereo";
+    const auto format = capture.isFormatSupported(streamFormat()) ? streamFormat() : capture.preferredFormat();
+    if (format != streamFormat())
+      qInfo().noquote() << "audio: converting" << capture.description() << "from" << format.sampleRate() << "Hz,"
+                        << format.channelCount() << "channel(s)";
+    m_converter = StreamConverter(format);
     m_source = std::make_unique<QAudioSource>(capture, format);
-    m_source->setBufferSize(kChunkBytes * 4);
+    m_source->setBufferSize(format.bytesForDuration(40'000));
     m_sourceIo = m_source->start();
     if (!m_sourceIo || m_source->error() != QAudio::NoError) {
       Q_EMIT error(tr("Could not open %1").arg(capture.description()));
@@ -75,7 +77,7 @@ void AudioEngine::readCapture()
 {
   if (!m_sourceIo || !m_sendKind)
     return;
-  m_captureBuffer.append(m_sourceIo->readAll());
+  m_captureBuffer.append(m_converter.convert(m_sourceIo->readAll()));
   while (m_captureBuffer.size() >= kChunkBytes) {
     Q_EMIT captured(*m_sendKind, m_captureBuffer.left(kChunkBytes));
     m_captureBuffer.remove(0, kChunkBytes);
