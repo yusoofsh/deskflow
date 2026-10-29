@@ -51,15 +51,19 @@ Audio runs while the core runs, on the core port + 1. The server routes it; clie
 
 | Option         | Valid Values  | Description |
 |:---------------|:-------------:|:-----------|
-| role           | `0`, `1`, `2` | `0` off, `1` this computer owns the shared headset (plays the others' sound, sends its mic), `2` send this computer's sound to the headset and receive its mic [default: 0] |
-| captureDevice  | Device id     | Input to capture: the headset mic for role `1`, the loopback device (e.g. `BlackHole 2ch` on macOS) for role `2` |
-| playbackDevice | Device id     | Output to play to: the headset speaker for role `1`, the virtual mic device (e.g. `BlackHole 16ch` on macOS) for role `2` |
+| role           | `0`, `1`, `2` | `0` off, `1` use this computer's audio (plays the others' sound, sends its microphone), `2` use another computer's audio (sends this computer's sound there and receives its microphone) [default: 0] |
+| captureDevice  | Device id     | Input to capture: the microphone for role `1`, the loopback device (`Deskflow Sound Capture` on macOS) for role `2` |
+| playbackDevice | Device id     | Output to play to: the speaker for role `1`, the virtual microphone device (`Deskflow Mic Feed` on macOS) for role `2` |
 
-On macOS, role `2` uses [BlackHole](https://existential.audio/blackhole/) and hides the device choices.
-To install it, click **Install BlackHole** in the Audio section and enter your password once.
-The button installs the [BlackHole 2ch](https://existential.audio/downloads/BlackHole2ch-0.7.1.pkg) and
-[BlackHole 16ch](https://existential.audio/downloads/BlackHole16ch-0.7.1.pkg) packages.
-Deskflow uses 2ch for the Mac's sound and 16ch for the headset mic, so the mic never mixes into the captured sound.
+On macOS, role `2` uses BlackHole Loopback and hides the device choices.
+To install it, click **Install BlackHole Loopback** in the Audio section and enter your password once.
+The Sound menu then shows one **BlackHole Loopback** output and one **BlackHole Loopback** input.
+Deskflow switches the Mac to both while sharing and switches back when it stops.
+
+BlackHole Loopback is two drivers built from [BlackHole](https://github.com/ExistentialAudio/BlackHole) 0.7.2
+by `deploy/mac/build-blackhole-loopback.sh` and shipped inside `Deskflow.app`.
+Each driver also has a hidden mirror device that Deskflow reads or writes and that no other app lists.
+Two drivers keep the shared microphone from mixing into the captured Mac sound.
 
 ### Client
 

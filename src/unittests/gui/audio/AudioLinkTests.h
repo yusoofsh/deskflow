@@ -15,4 +15,5 @@ private Q_SLOTS:
   void tlsLinkCarriesAudioBetweenTrustedPeers();
   void tlsLinkRefusesUntrustedServer();
   void clientWalksTheHostListUntilOneAnswers();
+  void clientRetriesAStalledHandshake();
 };

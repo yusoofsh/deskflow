@@ -163,4 +163,21 @@ void AudioLinkTests::clientWalksTheHostListUntilOneAnswers()
   QTRY_COMPARE(serverHeard.count(), 1);
 }
 
+void AudioLinkTests::clientRetriesAStalledHandshake()
+{
+  QTcpServer silent;
+  QVERIFY(silent.listen(QHostAddress::LocalHost, 0));
+  int accepted = 0;
+  QObject::connect(&silent, &QTcpServer::newConnection, &silent, [&silent, &accepted] {
+    while (silent.hasPendingConnections()) {
+      silent.nextPendingConnection();
+      ++accepted;
+    }
+  });
+
+  AudioLink remote;
+  remote.connectTo({"127.0.0.1"}, silent.serverPort(), Role::Remote, {true, QString(), QString(), false});
+  QTRY_VERIFY_WITH_TIMEOUT(accepted >= 2, 15000);
+}
+
 QTEST_MAIN(AudioLinkTests)

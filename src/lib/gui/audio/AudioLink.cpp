@@ -20,6 +20,7 @@ namespace deskflow::gui::audio {
 
 namespace {
 constexpr int kRetryMs = 3000;
+constexpr int kHandshakeTimeoutMs = 5000;
 // Beyond this much unsent data the receiver is not keeping up; dropping audio beats growing latency.
 constexpr qint64 kMaxQueuedBytes = kChunkBytes * 50;
 
@@ -203,7 +204,11 @@ void AudioLink::reconnect()
 {
   if (m_hosts.isEmpty())
     return;
-  m_host = m_hosts.at(m_nextHost++ % m_hosts.size());
+  const auto attempt = m_nextHost++;
+  m_host = m_hosts.at(attempt % m_hosts.size());
+  // mDNS can resolve a Windows host to an IPv6 link-local address first, and TLS over it stalls.
+  const auto protocol =
+      (attempt / m_hosts.size()) % 2 == 0 ? QAbstractSocket::IPv4Protocol : QAbstractSocket::AnyIPProtocol;
   if (m_uplink)
     m_uplink->deleteLater();
 
@@ -239,13 +244,21 @@ void AudioLink::reconnect()
     m_retry.start();
   });
 
+  QTimer::singleShot(kHandshakeTimeoutMs, socket, [this, socket] {
+    if (socket != m_uplink || socket->property("trusted").toBool())
+      return;
+    Q_EMIT statusChanged(tr("Audio cannot reach %1: no answer").arg(m_host));
+    socket->abort();
+    m_retry.start();
+  });
+
   if (m_tls.enabled) {
     configureTls(socket);
     connect(socket, &QSslSocket::encrypted, this, onReady);
-    socket->connectToHostEncrypted(m_host, m_port);
+    socket->connectToHostEncrypted(m_host, m_port, QIODevice::ReadWrite, protocol);
   } else {
     connect(socket, &QSslSocket::connected, this, onReady);
-    socket->connectToHost(m_host, m_port);
+    socket->connectToHost(m_host, m_port, QIODevice::ReadWrite, protocol);
   }
 }
 
