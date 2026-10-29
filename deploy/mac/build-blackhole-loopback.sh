@@ -4,8 +4,7 @@
 
 # Builds the two BlackHole Loopback drivers from BlackHole source.
 # Each driver shows macOS one "BlackHole Loopback" device in one direction.
-# Its mirror carries the other end for Deskflow and cannot be a default device,
-# so it stays out of the Sound menu.
+# Its hidden mirror carries the other end for Deskflow; no app lists it.
 # Usage: build-blackhole-loopback.sh <BlackHole source dir> <output dir> [codesign identity]
 
 set -eu
@@ -13,13 +12,6 @@ set -eu
 src=$1
 out=$2
 identity=${3:--}
-
-# BlackHole answers "can be default" for both devices from one flag; make the mirror answer no.
-for flag in kCanBeDefaultDevice kCanBeDefaultSystemDevice; do
-  perl -0pi -e "s/\\*\\(\\(UInt32\\*\\)outData\\) = $flag;/*((UInt32*)outData) = (inObjectID == kObjectID_Device2) ? 0 : $flag;/" \
-    "$src/BlackHole/BlackHole.c"
-  grep -q "kObjectID_Device2) ? 0 : $flag;" "$src/BlackHole/BlackHole.c"
-done
 
 build() {
   name=$1 bundleId=$2 factory=$3 mirror=$4 input=$5 output=$6
@@ -30,7 +22,7 @@ build() {
     PRODUCT_BUNDLE_IDENTIFIER="$bundleId" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
     GCC_PREPROCESSOR_DEFINITIONS="\$GCC_PREPROCESSOR_DEFINITIONS kNumber_Of_Channels=2 kHas_Driver_Name_Format=false \
 kPlugIn_BundleID=\\\"$bundleId\\\" kDriver_Name=\\\"$name\\\" kManufacturer_Name=\\\"Deskflow\\\" \
-kDevice_Name=\\\"BlackHole\\ Loopback\\\" kDevice2_Name=\\\"$mirror\\\" kDevice2_IsHidden=false \
+kDevice_Name=\\\"BlackHole\\ Loopback\\\" kDevice2_Name=\\\"$mirror\\\" kDevice2_IsHidden=true \
 kDevice_HasInput=$input kDevice_HasOutput=$output kDevice2_HasInput=$output kDevice2_HasOutput=$input" \
     >"$out/$name.log" 2>&1 || { cat "$out/$name.log"; exit 1; }
   sed -i '' "s/e395c745-4eea-4d94-bb92-46224221047c/$factory/" "$work/BlackHole.driver/Contents/Info.plist"
