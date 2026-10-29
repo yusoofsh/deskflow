@@ -215,6 +215,20 @@ AudioObjectPropertyAddress macDefaultDeviceAddress(bool input)
       kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
   };
 }
+
+AudioObjectID macAudioDeviceForUid(const QString &uid)
+{
+  AudioObjectPropertyAddress address{
+      kAudioHardwarePropertyTranslateUIDToDevice, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  CFStringRef uidString = uid.toCFString();
+  AudioObjectID device = kAudioObjectUnknown;
+  UInt32 size = sizeof(device);
+  const auto status =
+      AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, sizeof(uidString), &uidString, &size, &device);
+  CFRelease(uidString);
+  return status == noErr ? device : kAudioObjectUnknown;
+}
 } // namespace
 
 QString macDefaultAudioDevice(bool input)
@@ -246,4 +260,36 @@ bool macSetDefaultAudioDevice(bool input, const QString &name)
     return AudioObjectSetPropertyData(kAudioObjectSystemObject, &target, 0, nullptr, sizeof(device), &device) == noErr;
   }
   return false;
+}
+
+bool macAudioDeviceExists(const QString &uid)
+{
+  return macAudioDeviceForUid(uid) != kAudioObjectUnknown;
+}
+
+bool macAudioDeviceHidden(const QString &uid)
+{
+  const auto device = macAudioDeviceForUid(uid);
+  AudioObjectPropertyAddress address{
+      kAudioDevicePropertyIsHidden, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  UInt32 hidden = 0;
+  UInt32 size = sizeof(hidden);
+  return device != kAudioObjectUnknown &&
+         AudioObjectGetPropertyData(device, &address, 0, nullptr, &size, &hidden) == noErr && hidden != 0;
+}
+
+bool macCreatePrivateAudioDevice(const QString &uid, const QString &name, const QString &hiddenUid)
+{
+  NSDictionary *description = @{
+    @kAudioAggregateDeviceUIDKey : uid.toNSString(),
+    @kAudioAggregateDeviceNameKey : name.toNSString(),
+    @kAudioAggregateDeviceIsPrivateKey : @YES,
+    @kAudioAggregateDeviceMainSubDeviceKey : hiddenUid.toNSString(),
+    @kAudioAggregateDeviceSubDeviceListKey : @[
+      @{@kAudioSubDeviceUIDKey : hiddenUid.toNSString()}
+    ],
+  };
+  AudioObjectID device = kAudioObjectUnknown;
+  return AudioHardwareCreateAggregateDevice((__bridge CFDictionaryRef)description, &device) == noErr;
 }
