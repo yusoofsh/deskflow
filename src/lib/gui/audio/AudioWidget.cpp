@@ -21,6 +21,8 @@ namespace deskflow::gui::audio {
 
 namespace {
 
+const auto kBlackHoleInstaller = QStringLiteral("https://existential.audio/downloads/BlackHole%1-0.7.1.pkg");
+
 void fillDevices(QComboBox *combo, const QList<QAudioDevice> &devices, const QAudioDevice &selected)
 {
   const QSignalBlocker blocker(combo);
@@ -52,8 +54,9 @@ AudioWidget::AudioWidget(AudioSharing *sharing, QWidget *parent)
   m_hint->setWordWrap(true);
   m_hint->setOpenExternalLinks(true);
   m_hint->setText(
-      tr("To send this Mac's sound, install <a href=\"https://github.com/ExistentialAudio/BlackHole\">BlackHole</a> "
-         "2ch and 16ch (<code>brew install blackhole-2ch blackhole-16ch</code>), then restart Deskflow.")
+      tr("To send this Mac's sound, download and open both BlackHole installers: <a href=\"%1\">BlackHole 2ch</a> "
+         "and <a href=\"%2\">BlackHole 16ch</a>.")
+          .arg(kBlackHoleInstaller.arg(QStringLiteral("2ch")), kBlackHoleInstaller.arg(QStringLiteral("16ch")))
   );
   m_status->setWordWrap(true);
 
