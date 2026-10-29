@@ -594,7 +594,19 @@ void CoreProcess::cleanup()
 QPair<bool, QString> CoreProcess::persistServerConfig() const
 {
   if (Settings::value(Settings::Server::ExternalConfig).toBool()) {
-    return {Settings::isServerConfigFileReadable(), Settings::value(Settings::Server::ExternalConfigFile).toString()};
+    const auto configFilePath = Settings::serverConfigFile();
+    if (configFilePath == Settings::value(Settings::Server::ExternalConfigFile).toString()) {
+      return {Settings::isServerConfigFileReadable(), configFilePath};
+    }
+
+    QFile mergedFile(configFilePath);
+    if (!mergedFile.open(QIODevice::WriteOnly | QIODevice::Truncate) ||
+        !m_serverConfig.saveExternalConfigWithHotkeys(mergedFile)) {
+      qWarning() << "failed to write core config file:" << configFilePath;
+      return {false, configFilePath};
+    }
+    mergedFile.close();
+    return {true, configFilePath};
   }
 
   const auto configFilePath = Settings::defaultValue(Settings::Server::ExternalConfigFile).toString();

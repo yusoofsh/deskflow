@@ -91,6 +91,7 @@ public:
   }
 
   void loadSettings(QSettingsProxy &settings);
+  void loadSettings(const QString &name);
   void saveSettings(QSettingsProxy &settings) const;
   [[nodiscard]] QString screensSection() const;
 

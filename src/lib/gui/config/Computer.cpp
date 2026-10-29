@@ -21,7 +21,11 @@ Computer::Computer(const QString &name)
 
 void Computer::loadSettings(QSettingsProxy &settings)
 {
-  const auto name = settings.value("name").toString();
+  loadSettings(settings.value("name").toString());
+}
+
+void Computer::loadSettings(const QString &name)
+{
   setName(name);
 
   if (name.isEmpty())

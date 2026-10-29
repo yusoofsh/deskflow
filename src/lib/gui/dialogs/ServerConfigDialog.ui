@@ -102,6 +102,31 @@
           </widget>
          </item>
          <item>
+          <widget class="QLabel" name="lblExternalConfigLayout">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>1</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>310</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>A server config file sets how these computers connect, so moving them here changes nothing. Double-click a computer to change its settings.</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="horizontalSpacer_22">
            <property name="orientation">
             <enum>Qt::Orientation::Horizontal</enum>
@@ -768,7 +793,7 @@
          <property name="toolTip">
           <string>Use a server config file to create complex computer layouts that are not possible with the simple grid-based computer layout editor.
 
-Enabling this setting will disable the server config GUI.</string>
+The file sets how computers connect. Computer settings and hotkeys from this dialog still apply.</string>
          </property>
          <property name="title">
           <string>Use a server config file</string>
