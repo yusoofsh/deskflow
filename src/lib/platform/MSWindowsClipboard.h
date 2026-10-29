@@ -45,6 +45,12 @@ public:
   //! Test if clipboard is owned by deskflow
   static bool isOwnedByDeskflow();
 
+  //! Lets has() and get() see files copied in Explorer when running as SYSTEM
+  /*!
+  Must be called before open(), see MSWindowsClipboardFilesConverter::readAsSessionUser().
+  */
+  void readSessionUserFiles();
+
   // IClipboard overrides
   bool empty() override;
   void add(Format, const std::string &data) override;
@@ -75,6 +81,7 @@ private:
   static UINT s_ownershipFormat;
   IMSWindowsClipboardFacade *m_facade;
   bool m_deleteFacade;
+  std::string m_sessionUserFiles;
 };
 
 //! Clipboard format converter interface

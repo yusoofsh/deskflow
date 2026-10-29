@@ -392,6 +392,11 @@ bool Config::hasLockToComputerAction() const
   return m_hasLockToComputerAction;
 }
 
+void Config::setHasLockToComputerAction()
+{
+  m_hasLockToComputerAction = true;
+}
+
 bool Config::operator==(const Config &x) const
 {
   if (m_deskflowAddress != x.m_deskflowAddress) {

@@ -358,6 +358,9 @@ public:
   */
   bool hasLockToComputerAction() const;
 
+  //! Record that a lock to computer action was added to the input filter
+  void setHasLockToComputerAction();
+
   //! Compare configurations
   bool operator==(const Config &) const;
 

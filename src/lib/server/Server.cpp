@@ -238,6 +238,9 @@ bool Server::setConfig(const ServerConfig &config)
     InputFilter::Rule rule(new InputFilter::KeystrokeCondition(m_events, key));
     rule.adoptAction(new InputFilter::LockCursorToComputerAction(m_events), true);
     m_inputFilter->addFilterRule(rule);
+
+    // the config outlives this server when it restarts after sleep, so only add the rule once
+    m_config->setHasLockToComputerAction();
   }
 
   // tell primary computer about reconfiguration
