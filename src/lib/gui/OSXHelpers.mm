@@ -7,6 +7,7 @@
 #import "OSXHelpers.h"
 
 #import <Cocoa/Cocoa.h>
+#import <CoreAudio/CoreAudio.h>
 #import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
 #import <UserNotifications/UNNotification.h>
@@ -16,6 +17,8 @@
 #import <objc/runtime.h>
 
 #import <QtGlobal>
+
+#include <vector>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -154,4 +157,69 @@ void installQuitHandler(std::function<bool()> shouldQuit)
                                                                 Q_UNUSED(note)
                                                                 s_isSystemShuttingDown = YES;
                                                               }];
+}
+
+namespace {
+QString macAudioDeviceName(AudioObjectID device)
+{
+  AudioObjectPropertyAddress address{
+      kAudioObjectPropertyName, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  CFStringRef name = nullptr;
+  UInt32 size = sizeof(name);
+  if (AudioObjectGetPropertyData(device, &address, 0, nullptr, &size, &name) != noErr || !name)
+    return {};
+  const auto result = QString::fromCFString(name);
+  CFRelease(name);
+  return result;
+}
+
+bool macAudioDeviceHasStreams(AudioObjectID device, bool input)
+{
+  AudioObjectPropertyAddress address{
+      kAudioDevicePropertyStreams, input ? kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeOutput,
+      kAudioObjectPropertyElementMain
+  };
+  UInt32 size = 0;
+  return AudioObjectGetPropertyDataSize(device, &address, 0, nullptr, &size) == noErr && size > 0;
+}
+
+AudioObjectPropertyAddress macDefaultDeviceAddress(bool input)
+{
+  return {
+      input ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice,
+      kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+}
+} // namespace
+
+QString macDefaultAudioDevice(bool input)
+{
+  auto address = macDefaultDeviceAddress(input);
+  AudioObjectID device = kAudioObjectUnknown;
+  UInt32 size = sizeof(device);
+  if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, nullptr, &size, &device) != noErr)
+    return {};
+  return macAudioDeviceName(device);
+}
+
+bool macSetDefaultAudioDevice(bool input, const QString &name)
+{
+  AudioObjectPropertyAddress address{
+      kAudioHardwarePropertyDevices, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  UInt32 size = 0;
+  if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &address, 0, nullptr, &size) != noErr)
+    return false;
+  std::vector<AudioObjectID> devices(size / sizeof(AudioObjectID));
+  if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, nullptr, &size, devices.data()) != noErr)
+    return false;
+
+  for (const auto device : devices) {
+    if (macAudioDeviceName(device) != name || !macAudioDeviceHasStreams(device, input))
+      continue;
+    auto target = macDefaultDeviceAddress(input);
+    return AudioObjectSetPropertyData(kAudioObjectSystemObject, &target, 0, nullptr, sizeof(device), &device) == noErr;
+  }
+  return false;
 }

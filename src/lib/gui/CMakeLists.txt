@@ -33,6 +33,16 @@ add_library(${target} STATIC
   TlsUtility.h
   VersionChecker.cpp
   VersionChecker.h
+  audio/AudioEngine.cpp
+  audio/AudioEngine.h
+  audio/AudioLink.cpp
+  audio/AudioLink.h
+  audio/AudioProtocol.cpp
+  audio/AudioProtocol.h
+  audio/AudioSharing.cpp
+  audio/AudioSharing.h
+  audio/AudioWidget.cpp
+  audio/AudioWidget.h
   config/ComputerConfig.h
   config/Computer.cpp
   config/Computer.h
@@ -122,5 +132,10 @@ target_link_libraries(${target}
     common
     platform
     net
+    Qt6::Multimedia
     Qt6::Widgets
 )
+
+if(APPLE)
+  target_link_libraries(${target} PRIVATE "-framework CoreAudio")
+endif()

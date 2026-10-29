@@ -34,6 +34,12 @@ public:
   inline const static auto UserSettingFile = QStringLiteral("%1/%2.conf").arg(UserDir, kAppName);
   inline const static auto SystemSettingFile = QStringLiteral("%1/%2.conf").arg(SystemDir, kAppName);
 
+  struct Audio
+  {
+    inline static const auto Role = QStringLiteral("audio/role");
+    inline static const auto CaptureDevice = QStringLiteral("audio/captureDevice");
+    inline static const auto PlaybackDevice = QStringLiteral("audio/playbackDevice");
+  };
   struct Client
   {
     inline static const auto DynamicConnectionRetry = QStringLiteral("client/dynamicConnectionInterval");
@@ -262,7 +268,8 @@ private:
 
   // clang-format off
   inline static const QStringList m_validGroup = {
-      QStringLiteral("client")
+      QStringLiteral("audio")
+    , QStringLiteral("client")
     , QStringLiteral("core")
     , QStringLiteral("daemon")
     , QStringLiteral("gui")
@@ -273,7 +280,10 @@ private:
   };
 
   inline static const QStringList m_validKeys = {
-      Client::DynamicConnectionRetry
+      Audio::Role
+    , Audio::CaptureDevice
+    , Audio::PlaybackDevice
+    , Client::DynamicConnectionRetry
     , Client::InvertYScroll
     , Client::InvertXScroll
     , Client::LanguageSync
