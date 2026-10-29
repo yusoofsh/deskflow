@@ -104,7 +104,8 @@ void AudioLinkTests::tlsLinkCarriesAudioBetweenTrustedPeers()
   deskflow::generatePemSelfSignedCert(cert, 2048);
   const auto trusted = dir.filePath("trusted.txt");
   FingerprintDatabase db;
-  db.addTrusted({QCryptographicHash::Sha256, QSslCertificate::fromPath(cert).first().digest(QCryptographicHash::Sha256)}
+  db.addTrusted(
+      {QCryptographicHash::Sha256, QSslCertificate::fromPath(cert).first().digest(QCryptographicHash::Sha256)}
   );
   QVERIFY(db.write(trusted));
 
@@ -161,6 +162,23 @@ void AudioLinkTests::clientWalksTheHostListUntilOneAnswers()
 
   remote.sendLocal(FrameKind::Speaker, "second-host");
   QTRY_COMPARE(serverHeard.count(), 1);
+}
+
+void AudioLinkTests::clientRetriesAStalledHandshake()
+{
+  QTcpServer silent;
+  QVERIFY(silent.listen(QHostAddress::LocalHost, 0));
+  int accepted = 0;
+  QObject::connect(&silent, &QTcpServer::newConnection, &silent, [&silent, &accepted] {
+    while (silent.hasPendingConnections()) {
+      silent.nextPendingConnection();
+      ++accepted;
+    }
+  });
+
+  AudioLink remote;
+  remote.connectTo({"127.0.0.1"}, silent.serverPort(), Role::Remote, {true, QString(), QString(), false});
+  QTRY_VERIFY_WITH_TIMEOUT(accepted >= 2, 15000);
 }
 
 QTEST_MAIN(AudioLinkTests)
