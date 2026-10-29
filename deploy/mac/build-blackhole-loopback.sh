@@ -2,10 +2,7 @@
 # SPDX-FileCopyrightText: (C) 2026 Deskflow Developers
 # SPDX-License-Identifier: MIT
 
-# Builds the two BlackHole Loopback drivers from BlackHole source.
-# Each driver shows macOS one "BlackHole Loopback" device in one direction.
-# Its hidden mirror carries the other end for Deskflow; no app lists it.
-# Usage: build-blackhole-loopback.sh <BlackHole source dir> <output dir> [codesign identity]
+# BlackHole's device 2 reads and writes device 1's buffer, so each driver carries one direction and device 2 gets the opposite flags.
 
 set -eu
 

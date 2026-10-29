@@ -20,9 +20,6 @@ namespace deskflow::gui::audio {
 
 namespace {
 
-// macOS sees one "BlackHole Loopback" output and one "BlackHole Loopback" input, from two drivers.
-// Separate drivers keep the shared microphone out of the captured Mac sound.
-// Each driver's mirror is hidden from every app; Deskflow reaches it through a device only its own process sees.
 const auto kLoopbackName = QStringLiteral("BlackHole Loopback");
 
 struct LoopbackDevice
