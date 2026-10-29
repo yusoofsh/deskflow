@@ -104,8 +104,7 @@ void AudioLinkTests::tlsLinkCarriesAudioBetweenTrustedPeers()
   deskflow::generatePemSelfSignedCert(cert, 2048);
   const auto trusted = dir.filePath("trusted.txt");
   FingerprintDatabase db;
-  db.addTrusted(
-      {QCryptographicHash::Sha256, QSslCertificate::fromPath(cert).first().digest(QCryptographicHash::Sha256)}
+  db.addTrusted({QCryptographicHash::Sha256, QSslCertificate::fromPath(cert).first().digest(QCryptographicHash::Sha256)}
   );
   QVERIFY(db.write(trusted));
 

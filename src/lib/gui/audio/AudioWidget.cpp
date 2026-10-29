@@ -25,7 +25,6 @@ namespace deskflow::gui::audio {
 
 namespace {
 
-// The app bundle carries both BlackHole Loopback drivers; one admin prompt copies them and reloads Core Audio.
 QString installBlackHoleScript()
 {
   auto drivers =
@@ -96,7 +95,6 @@ AudioWidget::AudioWidget(AudioSharing *sharing, QWidget *parent)
 
 void AudioWidget::roleSelected(int index)
 {
-  // Device choices mean different things per role (microphone vs loopback), so start from that role's defaults.
   Settings::setValue(Settings::Audio::CaptureDevice, QVariant());
   Settings::setValue(Settings::Audio::PlaybackDevice, QVariant());
   Settings::setValue(Settings::Audio::Role, m_role->itemData(index));
