@@ -43,6 +43,8 @@ add_library(${target} STATIC
   audio/AudioSharing.h
   audio/AudioWidget.cpp
   audio/AudioWidget.h
+  audio/StreamConverter.cpp
+  audio/StreamConverter.h
   config/ComputerConfig.h
   config/Computer.cpp
   config/Computer.h
