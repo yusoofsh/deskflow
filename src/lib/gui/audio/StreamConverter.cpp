@@ -11,15 +11,17 @@
 
 namespace deskflow::gui::audio {
 
+namespace {
+constexpr qint64 kTicksPerInputFrame = kSampleRate;
+} // namespace
+
 StreamConverter::StreamConverter(const QAudioFormat &from) : m_from{from}
 {
 }
 
 StreamConverter::Sample StreamConverter::frameAt(qsizetype index) const
 {
-  if (index == 0)
-    return m_previous;
-  const auto *frame = m_pending.constData() + (index - 1) * m_from.bytesPerFrame();
+  const auto *frame = m_pending.constData() + index * m_from.bytesPerFrame();
   Sample sample;
   for (int c = 0; c < kChannels; ++c)
     sample[c] = m_from.normalizedSampleValue(frame + std::min(c, m_from.channelCount() - 1) * m_from.bytesPerSample());
@@ -34,9 +36,9 @@ QByteArray StreamConverter::convert(const QByteArray &pcm)
   m_pending.append(pcm);
   const qsizetype frames = m_pending.size() / m_from.bytesPerFrame();
   QByteArray out;
-  for (; m_position < frames * kSampleRate; m_position += m_from.sampleRate()) {
-    const auto index = m_position / kSampleRate;
-    const auto t = float(m_position % kSampleRate) / kSampleRate;
+  for (; m_inputTicks < (frames - 1) * kTicksPerInputFrame; m_inputTicks += m_from.sampleRate()) {
+    const auto index = m_inputTicks / kTicksPerInputFrame;
+    const auto t = float(m_inputTicks % kTicksPerInputFrame) / kTicksPerInputFrame;
     const auto a = frameAt(index);
     const auto b = frameAt(index + 1);
     for (int c = 0; c < kChannels; ++c) {
@@ -45,10 +47,9 @@ QByteArray StreamConverter::convert(const QByteArray &pcm)
       out.append(reinterpret_cast<const char *>(&sample), sizeof(sample));
     }
   }
-  if (frames > 0) {
-    m_previous = frameAt(frames);
-    m_position -= frames * kSampleRate;
-    m_pending.remove(0, frames * m_from.bytesPerFrame());
+  if (frames > 1) {
+    m_inputTicks -= (frames - 1) * kTicksPerInputFrame;
+    m_pending.remove(0, (frames - 1) * m_from.bytesPerFrame());
   }
   return out;
 }
