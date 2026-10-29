@@ -29,6 +29,7 @@ const GUID kPowerSaving = {0xe00958c0, 0xc213, 0x4ace, {0xac, 0x77, 0xfe, 0xcc, 
 constexpr DWORD kDisplayOn = 1;
 
 constexpr UINT_PTR kSettleTimer = 0xB1;
+constexpr UINT_PTR kRetryTimer = 0xB2;
 
 double secondsNow()
 {
@@ -142,6 +143,7 @@ MSWindowsBrightness::~MSWindowsBrightness()
   m_thread.join();
 
   stopSettling();
+  KillTimer(m_window, kRetryTimer);
   for (const auto notification : m_notifications) {
     UnregisterPowerSettingNotification(notification);
   }
@@ -166,8 +168,10 @@ std::vector<KeyID> MSWindowsBrightness::onPowerSetting(const POWERBROADCAST_SETT
     }
     return changed.keys;
   } else if (setting.PowerSetting == kDisplayState) {
+    LOG_DEBUG("display state is %d", value);
     m_tracker.displayChanged(value == kDisplayOn, now);
   } else if (setting.PowerSetting == kPowerSource || setting.PowerSetting == kPowerSaving) {
+    LOG_DEBUG("power source or saving changed");
     m_tracker.powerChanged(now);
   }
   return {};
@@ -175,6 +179,14 @@ std::vector<KeyID> MSWindowsBrightness::onPowerSetting(const POWERBROADCAST_SETT
 
 std::vector<KeyID> MSWindowsBrightness::onTimer(UINT_PTR timer)
 {
+  if (timer == kRetryTimer) {
+    KillTimer(m_window, kRetryTimer);
+    if (const auto level = m_tracker.retry(secondsNow())) {
+      LOG_DEBUG("the display brightness is not %d yet", *level);
+      setLevel(level);
+    }
+    return {};
+  }
   if (timer != kSettleTimer) {
     return {};
   }
@@ -204,11 +216,14 @@ void MSWindowsBrightness::setLevel(const std::optional<uint8_t> &level)
   if (!level) {
     return;
   }
+  LOG_DEBUG("putting the display brightness to %d", *level);
   {
     std::scoped_lock lock(m_mutex);
     m_request = level;
   }
   m_wake.notify_one();
+  // replaces the timer of an earlier level
+  SetTimer(m_window, kRetryTimer, static_cast<UINT>(BrightnessKeyTracker::kRetryTime * 1000), nullptr);
 }
 
 void MSWindowsBrightness::stopSettling()

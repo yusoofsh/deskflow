@@ -29,23 +29,7 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::leave(double now)
   if (!level || m_levels.size() < 2) {
     return action;
   }
-
-  // on the brightest level a step up changes nothing, so it can't be seen; the same goes down
-  m_held = level;
-  if (*level >= m_levels.back()) {
-    m_held = m_levels[m_levels.size() - 2];
-  } else if (*level <= m_levels.front()) {
-    m_held = m_levels[1];
-  }
-  if (std::abs(*m_held - *level) > kMaxMove) {
-    // a big jump would dim or light up the display while the cursor is away
-    m_held = level;
-  }
-  if (m_held != level) {
-    m_before = level;
-    m_moved = m_held;
-    action.level = m_held;
-  }
+  action.level = hold(*level);
   return request(std::move(action), now);
 }
 
@@ -69,20 +53,29 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::changed(uint8_t level, double
   Action action;
   const auto previous = m_level;
   m_level = level;
-  // levels this tracker asked for, and the held one, are the server's brightness being put back
-  if (isRequested(level, now) || !m_onClient || !m_held || !previous || level == *previous || level == *m_held) {
+  if (level == m_wanted) {
+    m_wanted.reset();
+  }
+  // levels this tracker asked for are the server's brightness being put back
+  if (isRequested(level, now)) {
+    return action;
+  }
+  // the system or the user moved the brightness since, so it isn't asked for again
+  m_wanted.reset();
+  if (!m_onClient || !m_held || !previous || level == *previous || level == *m_held) {
     return action;
   }
 
   if (systemChange(now)) {
-    m_held = level;
     m_stepLevel = level;
-    return action;
+    action.level = hold(level);
+    return request(std::move(action), now);
   }
 
   if (m_steps.empty()) {
     m_firstStep = now;
   }
+  // the step goes from the last level reported, which is the held one unless putting it back failed
   const KeyID key = level > *previous ? kKeyBrightnessUp : kKeyBrightnessDown;
   m_steps.push_back(key);
   m_stepLevel = level;
@@ -100,6 +93,10 @@ void BrightnessKeyTracker::displayChanged(bool on, double now)
 {
   m_displayOn = on;
   powerChanged(now);
+  // a display that's off or dimmed has the brightness the system gave it
+  if (!on) {
+    m_wanted.reset();
+  }
 }
 
 bool BrightnessKeyTracker::settling() const
@@ -120,17 +117,53 @@ BrightnessKeyTracker::Action BrightnessKeyTracker::settle(double now)
     for (auto key = m_steps.rbegin(); key != m_steps.rend(); ++key) {
       action.keys.push_back(*key == kKeyBrightnessUp ? kKeyBrightnessDown : kKeyBrightnessUp);
     }
-    m_held = m_stepLevel;
-    action.level = m_stepLevel;
+    hold(m_stepLevel);
+    action.level = m_held;
   }
   m_steps.clear();
   return request(std::move(action), now);
+}
+
+std::optional<uint8_t> BrightnessKeyTracker::retry(double now)
+{
+  if (!m_wanted || m_retries == kMaxRetries) {
+    m_wanted.reset();
+    return std::nullopt;
+  }
+  ++m_retries;
+  // the level counts as asked for from now on
+  std::erase_if(m_requested, [this](const auto &r) { return r.level == *m_wanted; });
+  m_requested.push_back({*m_wanted, now});
+  return m_wanted;
+}
+
+std::optional<uint8_t> BrightnessKeyTracker::hold(uint8_t level)
+{
+  m_held = level;
+  // on the brightest level a step up changes nothing, so it can't be seen; the same goes down
+  std::optional<uint8_t> room;
+  if (level >= m_levels.back()) {
+    room = m_levels[m_levels.size() - 2];
+  } else if (level <= m_levels.front()) {
+    room = m_levels[1];
+  }
+  // a big jump would dim or light up the display while the cursor is away, and a display
+  // that's off or dimmed has the brightness the system gave it
+  if (room && std::abs(*room - level) <= kMaxMove && m_displayOn) {
+    m_held = room;
+    m_before = level;
+    m_moved = room;
+    return room;
+  }
+  return std::nullopt;
 }
 
 BrightnessKeyTracker::Action BrightnessKeyTracker::request(Action action, double now)
 {
   if (action.level) {
     m_requested.push_back({*action.level, now});
+    m_wanted = action.level;
+    m_retries = 0;
   }
   return action;
 }
