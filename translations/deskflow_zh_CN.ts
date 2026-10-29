@@ -1481,19 +1481,7 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Uses BlackHole Loopback for this Mac&apos;s sound and microphone.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Install BlackHole Loopback</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use this computer&apos;s audio</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use another computer&apos;s audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1502,6 +1490,18 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
     </message>
     <message>
         <source>BlackHole Loopback was not installed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uses BlackHole Loopback for this Mac&apos;s sound and microphone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use this computer&apos;s audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use another computer&apos;s audio</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
