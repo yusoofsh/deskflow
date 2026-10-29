@@ -89,7 +89,11 @@ void AudioLink::listen(quint16 port, Role localRole, const LinkTls &tls)
 
   if (tls.enabled) {
     auto server = new QSslServer(this);
-    server->setSslConfiguration(tlsConfiguration(tls));
+    auto config = tlsConfiguration(tls);
+    // Schannel (Windows) only asks clients for a certificate in VerifyPeer mode. The CA errors this raises are
+    // ignored below, and peerTrusted() checks the certificate against the fingerprint database instead.
+    config.setPeerVerifyMode(QSslSocket::VerifyPeer);
+    server->setSslConfiguration(config);
     connect(server, &QSslServer::sslErrors, this, [](QSslSocket *socket, const QList<QSslError> &) {
       socket->ignoreSslErrors();
     });

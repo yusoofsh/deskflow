@@ -1471,10 +1471,6 @@ L&apos;abilitazione di questa impostazione disabiliterà l&apos;interfaccia graf
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>To send this Mac&apos;s sound, download and open both BlackHole installers: &lt;a href=&quot;%1&quot;&gt;BlackHole 2ch&lt;/a&gt; and &lt;a href=&quot;%2&quot;&gt;BlackHole 16ch&lt;/a&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Share audio:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1492,6 +1488,22 @@ L&apos;abilitazione di questa impostazione disabiliterà l&apos;interfaccia graf
     </message>
     <message>
         <source>Headset speaker:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uses BlackHole for this Mac&apos;s sound and the headset mic.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install BlackHole</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installing BlackHole...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BlackHole was not installed: %1</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -11,6 +11,7 @@
 class QComboBox;
 class QLabel;
 class QMediaDevices;
+class QPushButton;
 
 namespace deskflow::gui::audio {
 
@@ -26,13 +27,15 @@ public:
 private:
   void refresh();
   void roleSelected(int index);
+  void installBlackHole();
 
   QComboBox *m_role = nullptr;
   QLabel *m_captureLabel = nullptr;
   QComboBox *m_capture = nullptr;
   QLabel *m_playbackLabel = nullptr;
   QComboBox *m_playback = nullptr;
-  QLabel *m_hint = nullptr;
+  QLabel *m_blackHole = nullptr;
+  QPushButton *m_install = nullptr;
   QLabel *m_status = nullptr;
   QMediaDevices *m_devices = nullptr;
 };

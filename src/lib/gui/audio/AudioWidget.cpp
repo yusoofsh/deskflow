@@ -15,13 +15,21 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QMediaDevices>
+#include <QProcess>
+#include <QPushButton>
 #include <QSignalBlocker>
 
 namespace deskflow::gui::audio {
 
 namespace {
 
-const auto kBlackHoleInstaller = QStringLiteral("https://existential.audio/downloads/BlackHole%1-0.7.1.pkg");
+// BlackHole ships one package per channel count; the shell loop installs both behind a single admin prompt.
+const auto kInstallBlackHole = QStringLiteral(
+    "do shell script \"d=$(mktemp -d) && for n in 2ch 16ch; do "
+    "curl -fsSL -o $d/BlackHole$n.pkg https://existential.audio/downloads/BlackHole$n-0.7.1.pkg && "
+    "installer -pkg $d/BlackHole$n.pkg -target / || exit 1; done && killall coreaudiod\" "
+    "with administrator privileges"
+);
 
 void fillDevices(QComboBox *combo, const QList<QAudioDevice> &devices, const QAudioDevice &selected)
 {
@@ -41,7 +49,8 @@ AudioWidget::AudioWidget(AudioSharing *sharing, QWidget *parent)
       m_capture{new QComboBox(this)},
       m_playbackLabel{new QLabel(this)},
       m_playback{new QComboBox(this)},
-      m_hint{new QLabel(this)},
+      m_blackHole{new QLabel(tr("Uses BlackHole for this Mac's sound and the headset mic."), this)},
+      m_install{new QPushButton(tr("Install BlackHole"), this)},
       m_status{new QLabel(this)},
       m_devices{new QMediaDevices(this)}
 {
@@ -50,21 +59,15 @@ AudioWidget::AudioWidget(AudioSharing *sharing, QWidget *parent)
   m_role->addItem(tr("Send sound to the shared headset"), int(Role::Remote));
   m_capture->setPlaceholderText(tr("Choose a device"));
   m_playback->setPlaceholderText(tr("Choose a device"));
-
-  m_hint->setWordWrap(true);
-  m_hint->setOpenExternalLinks(true);
-  m_hint->setText(
-      tr("To send this Mac's sound, download and open both BlackHole installers: <a href=\"%1\">BlackHole 2ch</a> "
-         "and <a href=\"%2\">BlackHole 16ch</a>.")
-          .arg(kBlackHoleInstaller.arg(QStringLiteral("2ch")), kBlackHoleInstaller.arg(QStringLiteral("16ch")))
-  );
+  m_blackHole->setWordWrap(true);
   m_status->setWordWrap(true);
 
   auto layout = new QFormLayout(this);
   layout->addRow(tr("Share audio:"), m_role);
   layout->addRow(m_captureLabel, m_capture);
   layout->addRow(m_playbackLabel, m_playback);
-  layout->addRow(m_hint);
+  layout->addRow(m_blackHole);
+  layout->addRow(m_install);
   layout->addRow(m_status);
 
   connect(m_role, &QComboBox::activated, this, &AudioWidget::roleSelected);
@@ -74,6 +77,7 @@ AudioWidget::AudioWidget(AudioSharing *sharing, QWidget *parent)
   connect(m_playback, &QComboBox::activated, this, [this](int index) {
     Settings::setValue(Settings::Audio::PlaybackDevice, m_playback->itemData(index));
   });
+  connect(m_install, &QPushButton::clicked, this, &AudioWidget::installBlackHole);
   connect(m_devices, &QMediaDevices::audioInputsChanged, this, &AudioWidget::refresh);
   connect(m_devices, &QMediaDevices::audioOutputsChanged, this, &AudioWidget::refresh);
   connect(sharing, &AudioSharing::statusChanged, m_status, &QLabel::setText);
@@ -91,6 +95,22 @@ void AudioWidget::roleSelected(int index)
   refresh();
 }
 
+void AudioWidget::installBlackHole()
+{
+  m_install->setEnabled(false);
+  m_install->setText(tr("Installing BlackHole..."));
+  auto process = new QProcess(this);
+  connect(process, &QProcess::finished, this, [this, process](int exitCode, QProcess::ExitStatus exitStatus) {
+    if (exitStatus != QProcess::NormalExit || exitCode != 0)
+      m_status->setText(tr("BlackHole was not installed: %1").arg(QString::fromUtf8(process->readAllStandardError()).trimmed()));
+    m_install->setEnabled(true);
+    m_install->setText(tr("Install BlackHole"));
+    process->deleteLater();
+    refresh();
+  });
+  process->start(QStringLiteral("osascript"), {QStringLiteral("-e"), kInstallBlackHole});
+}
+
 void AudioWidget::refresh()
 {
   const auto role = AudioSharing::role();
@@ -100,17 +120,21 @@ void AudioWidget::refresh()
   }
 
   const bool remote = role == Role::Remote;
+  const bool macRemote = remote && deskflow::platform::isMac();
   m_captureLabel->setText(remote ? tr("Capture sound from:") : tr("Headset mic:"));
   m_playbackLabel->setText(remote ? tr("Headset mic appears as:") : tr("Headset speaker:"));
   fillDevices(m_capture, QMediaDevices::audioInputs(), AudioSharing::captureDevice(role));
   fillDevices(m_playback, QMediaDevices::audioOutputs(), AudioSharing::playbackDevice(role));
 
-  const bool on = role != Role::Off;
+  // On a Mac the remote side always uses BlackHole, so its device pickers would only expose plumbing.
+  const bool showDevices = role != Role::Off && !macRemote;
   for (QWidget *w :
        {static_cast<QWidget *>(m_captureLabel), static_cast<QWidget *>(m_capture),
         static_cast<QWidget *>(m_playbackLabel), static_cast<QWidget *>(m_playback)})
-    w->setVisible(on);
-  m_hint->setVisible(remote && deskflow::platform::isMac() && !AudioSharing::blackHoleInstalled());
+    w->setVisible(showDevices);
+  const bool installed = AudioSharing::blackHoleInstalled();
+  m_blackHole->setVisible(macRemote && installed);
+  m_install->setVisible(macRemote && !installed);
 }
 
 } // namespace deskflow::gui::audio
