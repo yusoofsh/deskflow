@@ -14,7 +14,9 @@
 #include <QSslKey>
 #include <QSslServer>
 #include <QSslSocket>
+#include <QStandardPaths>
 #include <QTcpServer>
+#include <QTextStream>
 
 namespace deskflow::gui::audio {
 
@@ -22,6 +24,18 @@ namespace {
 constexpr int kRetryMs = 3000;
 // Beyond this much unsent data the receiver is not keeping up; dropping audio beats growing latency.
 constexpr qint64 kMaxQueuedBytes = kChunkBytes * 50;
+
+// TEMP diagnostic trace; write to a plain file because the Windows GUI has no visible console.
+void traceLine(const QString &line)
+{
+  const auto path =
+      QStandardPaths::writableLocation(QStandardPaths::TempLocation) + QStringLiteral("/deskflow-audio-trace.log");
+  QFile f(path);
+  if (!f.open(QIODevice::Append | QIODevice::Text))
+    return;
+  QTextStream s(&f);
+  s << line << "\n";
+}
 
 // Hands out QSslSocket without encryption so plain and TLS peers share one socket type.
 class PlainServer : public QTcpServer
@@ -71,14 +85,39 @@ void AudioLink::configureTls(QSslSocket *socket) const
 
 bool AudioLink::peerTrusted(QSslSocket *socket) const
 {
-  if (!m_tls.enabled || !m_tls.requirePeerTrust)
+  if (!m_tls.enabled || !m_tls.requirePeerTrust) {
+    traceLine(QStringLiteral("trust: skipped enabled=%1 require=%2").arg(m_tls.enabled).arg(m_tls.requirePeerTrust));
     return true;
+  }
   const auto cert = socket->peerCertificate();
-  if (cert.isNull())
-    return false;
   FingerprintDatabase db;
   db.read(m_tls.trustedPeersDb);
-  return db.isTrusted({QCryptographicHash::Sha256, cert.digest(QCryptographicHash::Sha256)});
+  const auto digest = cert.digest(QCryptographicHash::Sha256);
+  const bool trusted = db.isTrusted({QCryptographicHash::Sha256, digest});
+  bool dbReadOk = false;
+  int dbCount = -1;
+  if (QFile dbf(m_tls.trustedPeersDb); dbf.open(QIODevice::ReadOnly)) {
+    dbReadOk = true;
+    dbCount = 0;
+    while (!dbf.atEnd()) {
+      if (!dbf.readLine().trimmed().isEmpty())
+        dbCount++;
+    }
+  }
+  traceLine(QStringLiteral("trust: enabled=%1 require=%2 encrypted=%3 certNull=%4 chain=%5 subject=%6 digest=%7 "
+                            "dbPath=%8 dbRead=%9 dbCount=%10 result=%11")
+                .arg(m_tls.enabled)
+                .arg(m_tls.requirePeerTrust)
+                .arg(socket->isEncrypted())
+                .arg(cert.isNull())
+                .arg(socket->peerCertificateChain().size())
+                .arg(cert.isNull() ? QStringLiteral("-") : cert.subjectInfo(QSslCertificate::CommonName).join(','))
+                .arg(QString::fromLatin1(digest.toHex()))
+                .arg(m_tls.trustedPeersDb)
+                .arg(dbReadOk)
+                .arg(dbCount)
+                .arg(trusted));
+  return trusted;
 }
 
 void AudioLink::listen(quint16 port, Role localRole, const LinkTls &tls)
@@ -112,6 +151,11 @@ void AudioLink::acceptPendingConnections()
     auto socket = qobject_cast<QSslSocket *>(m_server->nextPendingConnection());
     if (!socket)
       continue;
+    traceLine(QStringLiteral("accept: encrypted=%1 chain=%2 certNull=%3 peer=%4")
+                  .arg(socket->isEncrypted())
+                  .arg(socket->peerCertificateChain().size())
+                  .arg(socket->peerCertificate().isNull())
+                  .arg(socket->peerAddress().toString()));
     if (m_tls.enabled) {
       if (socket->isEncrypted())
         addPeer(socket);
