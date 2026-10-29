@@ -32,8 +32,8 @@ QString installBlackHoleScript()
   drivers.replace(QStringLiteral("\\"), QStringLiteral("\\\\")).replace(QStringLiteral("\""), QStringLiteral("\\\""));
   return QStringLiteral(
              "do shell script \"cd \" & quoted form of \"%1\" & \" && for d in *.driver; do "
-             "rm -rf /Library/Audio/Plug-Ins/HAL/$d && cp -R $d /Library/Audio/Plug-Ins/HAL/ || exit 1; done && "
-             "killall coreaudiod\" with administrator privileges"
+             "rm -rf \\\"/Library/Audio/Plug-Ins/HAL/$d\\\" && cp -R \\\"$d\\\" /Library/Audio/Plug-Ins/HAL/ "
+             "|| exit 1; done && killall coreaudiod\" with administrator privileges"
   )
       .arg(drivers);
 }
