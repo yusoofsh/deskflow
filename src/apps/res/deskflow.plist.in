@@ -45,6 +45,9 @@
 	<key>com.apple.security.networking.local</key>
 	<true/>
 
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Deskflow captures audio to share your headset and computer sound with your other Deskflow computers.</string>
+
 	<!-- Accessibility Entitlements -->
 	<key>com.apple.security.accessibility</key>
 	<array>

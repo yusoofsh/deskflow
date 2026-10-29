@@ -17,3 +17,13 @@ bool isOSXInterfaceStyleDark();
 void forceAppActive();
 void macOSNativeHide();
 void installQuitHandler(std::function<bool()> shouldQuit);
+
+/**
+ * @return The name of the current system default audio input or output device.
+ */
+QString macDefaultAudioDevice(bool input);
+
+/**
+ * @brief Makes the audio device called @p name the system default input or output.
+ */
+bool macSetDefaultAudioDevice(bool input, const QString &name);

@@ -44,6 +44,17 @@ Option-value pairs are only written if the value is not the default value.
 option=value
 ```
 
+### Audio
+
+This section contains the shared audio options, it will begin with `[audio]`.
+Audio runs while the core runs, on the core port + 1. The server routes it; clients connect to the server.
+
+| Option         | Valid Values  | Description |
+|:---------------|:-------------:|:-----------|
+| role           | `0`, `1`, `2` | `0` off, `1` this computer owns the shared headset (plays the others' sound, sends its mic), `2` send this computer's sound to the headset and receive its mic [default: 0] |
+| captureDevice  | Device id     | Input to capture: the headset mic for role `1`, the loopback device (e.g. `BlackHole 2ch` on macOS) for role `2` |
+| playbackDevice | Device id     | Output to play to: the headset speaker for role `1`, the virtual mic device (e.g. `BlackHole 16ch` on macOS) for role `2` |
+
 ### Client
 
 This section contains options used when in client mode. 

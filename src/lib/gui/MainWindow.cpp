@@ -26,6 +26,8 @@
 #include "common/VersionInfo.h"
 #include "gui/Messages.h"
 #include "gui/TlsUtility.h"
+#include "gui/audio/AudioSharing.h"
+#include "gui/audio/AudioWidget.h"
 #include "gui/core/CoreProcess.h"
 #include "gui/ipc/DaemonIpcClient.h"
 #include "gui/widgets/LogDock.h"
@@ -63,6 +65,7 @@ MainWindow::MainWindow()
       m_trayIcon{new QSystemTrayIcon(this)},
       m_guiDupeChecker{new QLocalServer(this)},
       m_daemonIpcClient{new ipc::DaemonIpcClient(this)},
+      m_audioSharing{new audio::AudioSharing(this)},
       m_logDock{new LogDock(this)},
       m_statusBar{new StatusBar(this)},
       m_menuFile{new QMenu(this)},
@@ -130,6 +133,8 @@ MainWindow::MainWindow()
 
   createMenuBar();
   setupControls();
+  if (auto layout = qobject_cast<QBoxLayout *>(ui->topLevelWidget->layout()))
+    layout->insertWidget(layout->indexOf(ui->groupBox) + 1, new audio::AudioWidget(m_audioSharing, this));
   updateText();
   connectSlots();
   setupTrayIcon();
@@ -948,6 +953,7 @@ void MainWindow::coreProcessStateChanged(ProcessState state)
 {
   using enum ProcessState;
   updateStatus();
+  m_audioSharing->setCoreRunning(state == Started || state == Starting || state == RetryPending);
   if (state == Started) {
     qDebug() << "recording that core has started";
     Settings::setValue(Settings::Gui::AutoStartCore, true);
