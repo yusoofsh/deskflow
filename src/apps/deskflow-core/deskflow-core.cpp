@@ -19,6 +19,7 @@
 
 #if defined(Q_OS_WIN)
 #include "arch/win32/ArchMiscWindows.h"
+#include "platform/MSWindowsClipboardFilesConverter.h"
 #endif
 
 #include <QApplication>
@@ -26,6 +27,8 @@
 #include <QSharedMemory>
 #include <QTextStream>
 #include <QThread>
+
+#include <cstring>
 
 void qtMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &message)
 {
@@ -70,6 +73,11 @@ App *createApp(const CoreArgParser &parser, EventQueue &events, const QString &p
 int main(int argc, char **argv)
 {
 #if defined(Q_OS_WIN)
+  // the elevated core starts itself like this, as the signed in user, to read files copied in Explorer
+  if (argc == 2 && std::strcmp(argv[1], MSWindowsClipboardFilesConverter::kPrintArg) == 0) {
+    return MSWindowsClipboardFilesConverter::printCopiedFiles();
+  }
+
   ArchMiscWindows::setInstanceWin32(GetModuleHandle(nullptr));
 #endif
 

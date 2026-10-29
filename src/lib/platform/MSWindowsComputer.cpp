@@ -433,6 +433,7 @@ void *MSWindowsComputer::getEventTarget() const
 bool MSWindowsComputer::getClipboard(ClipboardID, IClipboard *dst) const
 {
   MSWindowsClipboard src(m_window);
+  src.readSessionUserFiles();
   Clipboard::copy(dst, &src);
   return true;
 }
