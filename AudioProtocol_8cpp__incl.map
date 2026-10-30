@@ -1,0 +1,15 @@
+<map id="src/lib/gui/audio/AudioProtocol.cpp" name="src/lib/gui/audio/AudioProtocol.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="187,5,409,30"/>
+<area shape="rect" id="Node000002" href="$AudioProtocol_8h.html" title=" " alt="" coords="123,78,236,103"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="281,29,213,72,211,67,276,32"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="260,78,336,103"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="300,28,300,64,296,61,296,33"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="360,78,434,103"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="315,28,371,69,365,69,314,33"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,151,111,175"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="162,103,92,145,89,140,157,103"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="135,151,224,175"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="181,101,182,136,177,134,177,105"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="248,151,314,175"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="197,101,254,142,249,142,195,106"/>
+</map>

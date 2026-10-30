@@ -1,0 +1,23 @@
+<map id="src/lib/gui/audio/AudioOutputQt.cpp" name="src/lib/gui/audio/AudioOutputQt.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="425,5,614,44"/>
+<area shape="rect" id="Node000002" href="$AudioOutput_8h.html" title=" " alt="" coords="225,92,328,117"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="458,45,329,89,327,84,463,44"/>
+<area shape="rect" id="Node000006" href="$AudioProtocol_8h.html" title=" " alt="" coords="400,92,513,117"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="506,43,477,82,474,78,502,46"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="537,92,627,117"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="535,42,566,81,561,79,534,47"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="652,92,726,117"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="561,42,652,85,647,85,560,47"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,165,111,189"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="241,120,109,162,107,157,240,115"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="135,165,253,189"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="266,116,220,157,218,152,261,118"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="277,165,346,189"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="284,115,301,152,296,150,281,120"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="371,165,476,189"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="453,116,437,153,434,149,449,119"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="500,165,589,189"/>
+<area shape="poly" id="edge7_Node000006_Node000008" title=" " alt="" coords="472,115,521,155,516,154,470,120"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="613,165,679,189"/>
+<area shape="poly" id="edge8_Node000006_Node000009" title=" " alt="" coords="488,115,603,159,598,159,487,120"/>
+</map>
