@@ -179,3 +179,29 @@ void installQuitHandler(std::function<bool()> shouldQuit)
                                                                 s_isSystemShuttingDown = YES;
                                                               }];
 }
+
+void whenLaunchFinished(std::function<void(bool launchedAsLoginItem)> callback)
+{
+  // A modal dialog shown before this runs the event loop and finishes launching early, so the launch event is gone
+  if (NSRunningApplication.currentApplication.finishedLaunching) {
+    callback(false);
+    return;
+  }
+
+  NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+  // queue:nil runs the block inside the post, while the launch Apple event is still the current event
+  __block id observer =
+      [center addObserverForName:NSApplicationDidFinishLaunchingNotification
+                          object:NSApp
+                           queue:nil
+                      usingBlock:^(NSNotification *note) {
+                        Q_UNUSED(note)
+                        NSAppleEventDescriptor *event = [NSAppleEventManager sharedAppleEventManager].currentAppleEvent;
+                        callback(
+                            event.eventID == kAEOpenApplication &&
+                            [event paramDescriptorForKeyword:keyAEPropData].enumCodeValue == keyAELaunchedAsLogInItem
+                        );
+                        // last, as removing the observer can free this block and the callback it holds
+                        [center removeObserver:observer];
+                      }];
+}
