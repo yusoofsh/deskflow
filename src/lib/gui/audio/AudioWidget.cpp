@@ -142,6 +142,7 @@ void AudioWidget::refresh()
   const bool installed = AudioSharing::blackHoleInstalled();
   m_blackHole->setVisible(macRemote && installed);
   m_install->setVisible(macRemote && !installed);
+  m_status->setVisible(role != Role::Off);
 }
 
 } // namespace deskflow::gui::audio
