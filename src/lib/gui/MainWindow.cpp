@@ -190,14 +190,26 @@ void MainWindow::restoreWindow()
     setGeometry(windowGeometry);
   }
   m_expandedSize = geometry().size();
+  updateWindowSizing();
 
   if (!totalGeometry.contains(windowGeometry)) {
     QRect screenGeometry = QGuiApplication::primaryScreen()->geometry();
     move(screenGeometry.center() - rect().center());
   }
+}
 
-  if (!Settings::value(Settings::Gui::LogExpanded).toBool())
-    setFixedSize(size());
+void MainWindow::updateWindowSizing()
+{
+  if (!Settings::value(Settings::Gui::LogExpanded).toBool() || m_logDock->isFloating()) {
+    layout()->setSizeConstraint(QLayout::SetFixedSize);
+  } else {
+    layout()->setSizeConstraint(QLayout::SetDefaultConstraint);
+    setMinimumSize(0, 0);
+    setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    resize(m_expandedSize);
+  }
+  // Callers read geometry() right after this, so apply the new size now instead of on the next layout request.
+  layout()->activate();
 }
 
 void MainWindow::setupControls()
@@ -327,25 +339,14 @@ void MainWindow::toggleLogVisible(bool visible)
     return;
   }
 
-  setFixedSize(16777215, 16777215);
   Settings::setValue(Settings::Gui::LogExpanded, visible);
-  if (visible) {
-    if (m_logDock->isFloating()) {
-      adjustSize();
-      setFixedSize(size());
-    } else {
-      QTimer::singleShot(15, this, [&] { resize(m_expandedSize); });
-    }
-  } else {
+  if (!visible) {
     if (!m_logDock->isFloating()) {
       m_expandedSize = geometry().size();
     }
     m_logDock->hide();
-    if (!m_logDock->isFloating()) {
-      adjustSize();
-    }
-    setFixedSize(size());
   }
+  updateWindowSizing();
   Settings::setValue(Settings::Gui::WindowGeometry, geometry());
 }
 
