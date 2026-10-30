@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "AudioOutput.h"
 #include "AudioProtocol.h"
 #include "StreamConverter.h"
 
@@ -17,7 +18,6 @@
 
 #include <memory>
 
-class QAudioSink;
 class QAudioSource;
 class QIODevice;
 
@@ -45,8 +45,7 @@ Q_SIGNALS:
 private:
   struct Stream
   {
-    std::unique_ptr<QAudioSink> sink;
-    QIODevice *io = nullptr;
+    std::unique_ptr<AudioOutput> output;
     QByteArray pending;
     QElapsedTimer lastFrame;
   };

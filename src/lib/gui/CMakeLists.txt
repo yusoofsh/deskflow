@@ -13,6 +13,12 @@ if(APPLE)
   )
 endif()
 
+if(WIN32)
+  list(APPEND platform_sources audio/AudioOutputWasapi.cpp)
+else()
+  list(APPEND platform_sources audio/AudioOutputQt.cpp)
+endif()
+
 add_library(${target} STATIC
   ${platform_sources}
   ComputerSetupModel.cpp
@@ -37,6 +43,7 @@ add_library(${target} STATIC
   audio/AudioEngine.h
   audio/AudioLink.cpp
   audio/AudioLink.h
+  audio/AudioOutput.h
   audio/AudioProtocol.cpp
   audio/AudioProtocol.h
   audio/AudioSharing.cpp
@@ -140,4 +147,6 @@ target_link_libraries(${target}
 
 if(APPLE)
   target_link_libraries(${target} PRIVATE "-framework CoreAudio")
+elseif(WIN32)
+  target_link_libraries(${target} PRIVATE ole32)
 endif()
