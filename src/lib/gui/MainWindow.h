@@ -66,7 +66,7 @@ public:
   {
     return m_coreProcess.mode();
   }
-  void open();
+  void open(bool startedAtLogin);
   ServerConfig &serverConfig()
   {
     return m_serverConfig;
@@ -135,6 +135,7 @@ private:
   void showFirstConnectedMessage();
   void updateStatus();
   void showAndActivate();
+  void showOrHideOnStart(bool atLogin);
   void showHostNameEditor();
   void setHostName();
   void daemonIpcClientConnectionFailed();

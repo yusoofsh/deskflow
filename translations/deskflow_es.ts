@@ -1271,7 +1271,7 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
     </message>
     <message>
         <source>When the application starts</source>
-        <translation type="unfinished">Cuando se inicia la aplicación</translation>
+        <translation type="obsolete">Cuando se inicia la aplicación</translation>
     </message>
     <message>
         <source>Show the main window</source>
@@ -1295,6 +1295,10 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
     </message>
     <message>
         <source>Start Deskflow when you log in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When Deskflow starts at login</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
