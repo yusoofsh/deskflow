@@ -6,7 +6,6 @@
 
 #include "AudioEngine.h"
 
-#include <QAudioSink>
 #include <QAudioSource>
 #include <QDebug>
 
@@ -67,8 +66,6 @@ void AudioEngine::stop()
   }
   m_sourceIo = nullptr;
   m_captureBuffer.clear();
-  for (auto &s : m_streams)
-    s->sink->stop();
   m_streams.clear();
   m_sendKind.reset();
 }
@@ -92,10 +89,8 @@ AudioEngine::Stream *AudioEngine::stream(SourceId source)
     return nullptr;
 
   auto s = std::make_shared<Stream>();
-  s->sink = std::make_unique<QAudioSink>(m_playback, streamFormat());
-  s->sink->setBufferSize(kDeviceBufferBytes);
-  s->io = s->sink->start();
-  if (!s->io) {
+  s->output = openAudioOutput(m_playback, kDeviceBufferBytes);
+  if (!s->output) {
     Q_EMIT error(tr("Could not open %1").arg(m_playback.description()));
     return nullptr;
   }
@@ -112,7 +107,7 @@ void AudioEngine::play(SourceId source, const QByteArray &pcm)
     return;
   s->pending.append(pcm);
   s->lastFrame.start();
-  s->pending.remove(0, staleBytes(s->pending.size(), s->sink->bufferSize() - s->sink->bytesFree()));
+  s->pending.remove(0, staleBytes(s->pending.size(), s->output->queuedBytes()));
   drain();
 }
 
@@ -121,17 +116,11 @@ void AudioEngine::drain()
   for (auto it = m_streams.begin(); it != m_streams.end();) {
     auto &s = *it.value();
     if (s.pending.isEmpty() && s.lastFrame.isValid() && s.lastFrame.elapsed() > kIdleStreamMs) {
-      s.sink->stop();
       it = m_streams.erase(it);
       continue;
     }
-    const auto free = s.sink->bytesFree() / kBytesPerFrame * kBytesPerFrame;
-    const auto n = std::min<qsizetype>(free, s.pending.size());
-    if (n > 0) {
-      const auto written = s.io->write(s.pending.constData(), n);
-      if (written > 0)
-        s.pending.remove(0, written);
-    }
+    if (const auto written = s.output->write(s.pending); written > 0)
+      s.pending.remove(0, written);
     ++it;
   }
 }
