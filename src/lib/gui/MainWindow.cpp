@@ -161,6 +161,8 @@ MainWindow::MainWindow()
 #ifdef Q_OS_MACOS
   // Route native quits (Cmd+Q / Apple menu Quit / Dock "Quit") to the usual close-to-tray decision instead.
   installQuitHandler([this] { return !maybeHideToTray(); });
+  // macOS reopens the running app instead of starting a second one, so a reopen shows the window like a second start
+  installReopenHandler([this] { showAndActivate(); });
 #endif
 }
 MainWindow::~MainWindow()

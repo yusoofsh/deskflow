@@ -21,3 +21,4 @@ void setLaunchAtLogin(bool enabled);
 void installQuitHandler(std::function<bool()> shouldQuit);
 //! Calls back when launching finishes, or right away with false if it already has
 void whenLaunchFinished(std::function<void(bool launchedAsLoginItem)> callback);
+void installReopenHandler(std::function<void()> onReopen);
