@@ -14,7 +14,7 @@ private Q_SLOTS:
   void showsStatusOnlyWhileSharing();
 
 private:
-  inline static const QString m_settingsPath = QStringLiteral("tmp/test");
+  inline static const QString m_settingsPath = QStringLiteral("tmp/test/audio-widget");
   inline static const QString m_settingsFile = QStringLiteral("%1/Deskflow.conf").arg(m_settingsPath);
   inline static const QString m_stateFile = QStringLiteral("%1/Deskflow.state").arg(m_settingsPath);
 };
