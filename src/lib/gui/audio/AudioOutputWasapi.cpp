@@ -95,8 +95,9 @@ public:
   qsizetype queuedBytes() const override
   {
     UINT32 padding = 0;
+    // A lost device reads as full, so the engine drops audio and reopens it after a pause, like QAudioSink.
     if (FAILED(m_client->GetCurrentPadding(&padding)))
-      return 0;
+      return qsizetype(m_bufferFrames) * kBytesPerFrame;
     return qsizetype(padding) * kBytesPerFrame;
   }
 
