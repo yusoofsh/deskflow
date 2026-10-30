@@ -71,12 +71,15 @@ int main(int argc, char *argv[])
   auto helpOption = QCommandLineOption({"h", "help"}, "Display Help on the command line");
   auto versionOption = QCommandLineOption({"v", "version"}, "Display version information");
   auto resetOption = QCommandLineOption("reset", "Reset all settings");
+  auto autostartOption =
+      QCommandLineOption("autostart", "Started at login: follow the start setting instead of showing the window");
 
   QCommandLineParser parser;
   parser.setSingleDashWordOptionMode(QCommandLineParser::ParseAsLongOptions);
   parser.addOption(helpOption);
   parser.addOption(versionOption);
   parser.addOption(resetOption);
+  parser.addOption(autostartOption);
   parser.parse(QCoreApplication::arguments());
 
   if (!parser.errorText().isEmpty()) {
@@ -107,6 +110,10 @@ int main(int argc, char *argv[])
 
   // If we can create 1 byte of SHM we are the only instance
   if (!sharedMemory.create(1)) {
+    // A login start leaves the running instance as it is, so it can't pop up a window the user sent to the background
+    if (parser.isSet(autostartOption))
+      return s_exitDuplicate;
+
     // Ping the running instance to have it show itself
     QLocalSocket socket;
     socket.connectToServer(shmId, QLocalSocket::ReadOnly);
@@ -151,7 +158,7 @@ int main(int argc, char *argv[])
   }
 
   MainWindow mainWindow;
-  mainWindow.open();
+  mainWindow.open(parser.isSet(autostartOption));
 
   return QApplication::exec();
 }

@@ -166,6 +166,8 @@ MainWindow::MainWindow()
 #ifdef Q_OS_MACOS
   // Route native quits (Cmd+Q / Apple menu Quit / Dock "Quit") to the usual close-to-tray decision instead.
   installQuitHandler([this] { return !maybeHideToTray(); });
+  // macOS reopens the running app instead of starting a second one, so a reopen shows the window like a second start
+  installReopenHandler([this] { showAndActivate(); });
 #endif
 }
 MainWindow::~MainWindow()
@@ -626,19 +628,17 @@ void MainWindow::serverConnectionConfigureClient(const QString &clientName)
 // End slots
 //////////////////////////////////////////////////////////////////////////////
 
-void MainWindow::open()
+void MainWindow::open(bool startedAtLogin)
 {
 #ifdef Q_OS_MACOS
   setLaunchAtLogin(Settings::value(Settings::Gui::LaunchAtLogin).toBool());
+  // A login item can't pass --autostart, so its launch event says whether this start came from login
+  whenLaunchFinished([this, startedAtLogin](bool launchedAsLoginItem) {
+    showOrHideOnStart(startedAtLogin || launchedAsLoginItem);
+  });
+#else
+  showOrHideOnStart(startedAtLogin);
 #endif
-
-  if (!Settings::value(Settings::Gui::Autohide).toBool())
-    showAndActivate();
-  else if (deskflow::platform::isMac())
-    // macOS to call hide after this function ends
-    QTimer::singleShot(1, this, &MainWindow::hide);
-  else
-    hide();
 
   // if a critical error was shown just before the main window (i.e. on app
   // load), it will be hidden behind the main window. therefore we need to raise
@@ -665,6 +665,14 @@ void MainWindow::open()
       return;
     startCore();
   }
+}
+
+void MainWindow::showOrHideOnStart(bool atLogin)
+{
+  if (atLogin && Settings::value(Settings::Gui::Autohide).toBool())
+    hide();
+  else
+    showAndActivate();
 }
 
 void MainWindow::createMenuBar()

@@ -28,6 +28,8 @@ namespace {
 std::function<bool()> s_shouldQuit;
 IMP s_originalShouldTerminate = nullptr;
 BOOL s_isSystemShuttingDown = NO;
+std::function<void()> s_onReopen;
+IMP s_originalShouldHandleReopen = nullptr;
 } // namespace
 
 void requestOSXNotificationPermission()
@@ -292,4 +294,63 @@ bool macCreatePrivateAudioDevice(const QString &uid, const QString &name, const 
   };
   AudioObjectID device = kAudioObjectUnknown;
   return AudioHardwareCreateAggregateDevice((__bridge CFDictionaryRef)description, &device) == noErr;
+}
+
+void whenLaunchFinished(std::function<void(bool launchedAsLoginItem)> callback)
+{
+  // A modal dialog shown before this runs the event loop and finishes launching early, so the launch event is gone
+  if (NSRunningApplication.currentApplication.finishedLaunching) {
+    callback(false);
+    return;
+  }
+
+  NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+  // queue:nil runs the block inside the post, while the launch Apple event is still the current event
+  __block id observer =
+      [center addObserverForName:NSApplicationDidFinishLaunchingNotification
+                          object:NSApp
+                           queue:nil
+                      usingBlock:^(NSNotification *note) {
+                        Q_UNUSED(note)
+                        NSAppleEventDescriptor *event = [NSAppleEventManager sharedAppleEventManager].currentAppleEvent;
+                        callback(
+                            event.eventID == kAEOpenApplication &&
+                            [event paramDescriptorForKeyword:keyAEPropData].enumCodeValue == keyAELaunchedAsLogInItem
+                        );
+                        // last, as removing the observer can free this block and the callback it holds
+                        [center removeObserver:observer];
+                      }];
+}
+
+static BOOL deskflow_applicationShouldHandleReopen(id self, SEL _cmd, NSApplication *sender, BOOL hasVisibleWindows)
+{
+  // Qt's handler only reports the activation and never shows a window
+  BOOL shouldHandle = YES;
+  if (s_originalShouldHandleReopen) {
+    using ShouldHandleReopenFn = BOOL (*)(id, SEL, NSApplication *, BOOL);
+    shouldHandle =
+        reinterpret_cast<ShouldHandleReopenFn>(s_originalShouldHandleReopen)(self, _cmd, sender, hasVisibleWindows);
+  }
+
+  if (s_onReopen)
+    s_onReopen();
+
+  return shouldHandle;
+}
+
+void installReopenHandler(std::function<void()> onReopen)
+{
+  s_onReopen = std::move(onReopen);
+
+  Class cls = [[NSApp delegate] class];
+  SEL selector = @selector(applicationShouldHandleReopen:hasVisibleWindows:);
+
+  Method method = class_getInstanceMethod(cls, selector);
+  if (method) {
+    s_originalShouldHandleReopen = method_getImplementation(method);
+    method_setImplementation(method, (IMP)deskflow_applicationShouldHandleReopen);
+  } else {
+    const auto types = protocol_getMethodDescription(@protocol(NSApplicationDelegate), selector, NO, YES).types;
+    class_addMethod(cls, selector, (IMP)deskflow_applicationShouldHandleReopen, types);
+  }
 }

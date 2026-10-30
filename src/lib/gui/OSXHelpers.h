@@ -45,3 +45,7 @@ bool macAudioDeviceHidden(const QString &uid);
  * device @p hiddenUid. No other app sees it, and it goes away when this process quits.
  */
 bool macCreatePrivateAudioDevice(const QString &uid, const QString &name, const QString &hiddenUid);
+
+//! Calls back when launching finishes, or right away with false if it already has
+void whenLaunchFinished(std::function<void(bool launchedAsLoginItem)> callback);
+void installReopenHandler(std::function<void()> onReopen);
