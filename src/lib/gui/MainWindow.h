@@ -135,6 +135,7 @@ private:
   void showConfigureServer(const QString &message);
   void showConfigureClient();
   void restoreWindow();
+  void updateWindowSizing();
   void setupControls();
   void showFirstConnectedMessage();
   void updateStatus();
