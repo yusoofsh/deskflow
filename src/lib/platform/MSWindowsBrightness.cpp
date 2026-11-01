@@ -9,6 +9,7 @@
 #include "base/Log.h"
 
 #include <comutil.h>
+#include <powrprof.h>
 #include <wbemidl.h>
 #include <wrl/client.h>
 
@@ -26,6 +27,9 @@ const GUID kBrightness = {0x8ffee2c6, 0x2d01, 0x46be, {0xad, 0xb9, 0x39, 0x8a, 0
 const GUID kDisplayState = {0x6fe69556, 0x704a, 0x47a0, {0x8f, 0x24, 0xc2, 0x8d, 0x93, 0x6f, 0xda, 0x47}};
 const GUID kPowerSource = {0x5d3e9a59, 0xe9d5, 0x4b00, {0xa6, 0xbd, 0xff, 0x34, 0xff, 0x51, 0x65, 0x48}};
 const GUID kPowerSaving = {0xe00958c0, 0xc213, 0x4ace, {0xac, 0x77, 0xfe, 0xcc, 0xed, 0x2e, 0xee, 0xa5}};
+// GUID_VIDEO_SUBGROUP and GUID_DEVICE_POWER_POLICY_VIDEO_BRIGHTNESS
+const GUID kVideoSubgroup = {0x7516b95f, 0xf776, 0x4464, {0x8c, 0x53, 0x06, 0x16, 0x7f, 0x40, 0xcc, 0x99}};
+const GUID kBrightnessPolicy = {0xaded5e82, 0xb909, 0x4619, {0x99, 0x49, 0xf5, 0xd7, 0x1d, 0xac, 0x0b, 0xcb}};
 constexpr DWORD kDisplayOn = 1;
 
 constexpr UINT_PTR kSettleTimer = 0xB1;
@@ -36,37 +40,27 @@ double secondsNow()
   return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-//! The built-in display's brightness through WMI, for a thread in the multithreaded apartment
+//! The built-in display's brightness levels through WMI, for a thread in the multithreaded apartment
 class WmiBrightness
 {
 public:
   WmiBrightness()
   {
     ComPtr<IWbemLocator> locator;
-    ComPtr<IWbemClassObject> methods;
-    ComPtr<IWbemClassObject> methodClass;
-    ComPtr<IWbemClassObject> inputClass;
-    _variant_t path;
     if (FAILED(CoCreateInstance(__uuidof(WbemLocator), nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&locator))) ||
         FAILED(locator->ConnectServer(_bstr_t(L"ROOT\\WMI"), nullptr, nullptr, nullptr, 0, nullptr, nullptr, &m_wmi)) ||
-        FAILED(allowImpersonation(m_wmi.Get())) || !(methods = first(L"WmiMonitorBrightnessMethods")) ||
-        FAILED(methods->Get(L"__PATH", 0, &path, nullptr, nullptr)) || path.vt != VT_BSTR ||
-        FAILED(m_wmi->GetObject(_bstr_t(L"WmiMonitorBrightnessMethods"), 0, nullptr, &methodClass, nullptr)) ||
-        FAILED(methodClass->GetMethod(L"WmiSetBrightness", 0, &inputClass, nullptr)) ||
-        FAILED(inputClass->SpawnInstance(0, &m_input))) {
-      m_input.Reset();
-      return;
+        FAILED(allowImpersonation(m_wmi.Get()))) {
+      m_wmi.Reset();
     }
-    m_path = path.bstrVal;
   }
 
-  //! The brightness levels the display supports, none when it can't be set
+  //! The brightness levels the display supports, none when it has none
   std::vector<uint8_t> levels() const
   {
     std::vector<uint8_t> levels;
     ComPtr<IWbemClassObject> monitor;
     _variant_t value;
-    if (!m_input || !(monitor = first(L"WmiMonitorBrightness")) ||
+    if (!m_wmi || !(monitor = first(L"WmiMonitorBrightness")) ||
         FAILED(monitor->Get(L"Level", 0, &value, nullptr, nullptr)) || value.vt != (VT_ARRAY | VT_UI1)) {
       return levels;
     }
@@ -77,18 +71,6 @@ public:
       SafeArrayUnaccessData(value.parray);
     }
     return levels;
-  }
-
-  bool set(uint8_t level) const
-  {
-    // Timeout is a uint32, which WMI takes as VT_I4
-    _variant_t timeout(0L);
-    _variant_t brightness(static_cast<BYTE>(level));
-    return m_input && SUCCEEDED(m_input->Put(L"Timeout", 0, &timeout, 0)) &&
-           SUCCEEDED(m_input->Put(L"Brightness", 0, &brightness, 0)) &&
-           SUCCEEDED(
-               m_wmi->ExecMethod(m_path, _bstr_t(L"WmiSetBrightness"), 0, nullptr, m_input.Get(), nullptr, nullptr)
-           );
   }
 
 private:
@@ -115,9 +97,24 @@ private:
   }
 
   ComPtr<IWbemServices> m_wmi;
-  ComPtr<IWbemClassObject> m_input;
-  _bstr_t m_path;
 };
+
+// The brightness keys step from the power manager's level, and a brightness set through WMI
+// doesn't always become that level, so it's set through the active power scheme instead
+bool setSchemeBrightness(uint8_t level)
+{
+  GUID *scheme = nullptr;
+  if (PowerGetActiveScheme(nullptr, &scheme) != ERROR_SUCCESS) {
+    return false;
+  }
+  SYSTEM_POWER_STATUS power{};
+  const bool battery = GetSystemPowerStatus(&power) && power.ACLineStatus == 0;
+  const auto write = battery ? PowerWriteDCValueIndex : PowerWriteACValueIndex;
+  const bool set = write(nullptr, scheme, &kVideoSubgroup, &kBrightnessPolicy, level) == ERROR_SUCCESS &&
+                   PowerSetActiveScheme(nullptr, scheme) == ERROR_SUCCESS;
+  LocalFree(scheme);
+  return set;
+}
 
 } // namespace
 
@@ -255,7 +252,7 @@ void MSWindowsBrightness::run()
       const uint8_t level = *m_request;
       m_request.reset();
       lock.unlock();
-      if (!wmi.set(level)) {
+      if (!setSchemeBrightness(level)) {
         LOG_WARN("could not set the display brightness to %d", level);
       }
       lock.lock();
