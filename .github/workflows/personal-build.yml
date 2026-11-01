@@ -46,11 +46,11 @@ jobs:
         shell: bash
         run: cmake --build build --config Release -j8 --target package
 
-      - name: Clipboard, file transfer, touchpad, brightness and audio tests
+      - name: Clipboard, file transfer, touchpad, key map and audio tests
         shell: bash
         env:
           QT_QPA_PLATFORM: offscreen
-        run: ctest --test-dir build/src/unittests -R "Clipboard|FileTransfer|TouchpadGesture|BrightnessKey|Audio" --output-on-failure
+        run: ctest --test-dir build/src/unittests -R "Clipboard|FileTransfer|TouchpadGesture|KeyMap|Audio" --output-on-failure
 
       - name: Upload
         uses: actions/upload-artifact@v7

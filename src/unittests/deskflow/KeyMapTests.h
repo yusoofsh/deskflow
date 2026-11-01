@@ -23,6 +23,7 @@ private Q_SLOTS:
   void mapkey();
   void parseModifiers_plusKey_keepsPlusAsKey();
   void parseKey_plusSymbol_parsesAsAsciiKey();
+  void parseKey_brightnessNames_parseAsBrightnessKeys();
 
 private:
   Log m_log;

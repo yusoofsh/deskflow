@@ -30,14 +30,6 @@ create_test(
 )
 
 create_test(
-  NAME BrightnessKeyTrackerTests
-  DEPENDS app
-  LIBS arch base ${extra_libs}
-  SOURCE BrightnessKeyTrackerTests.cpp
-  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/src/lib/deskflow"
-)
-
-create_test(
   NAME TouchpadGestureTrackerTests
   DEPENDS app
   LIBS arch base ${extra_libs}
