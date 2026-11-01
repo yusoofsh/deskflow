@@ -25,7 +25,6 @@ class MSWindowsDesks;
 class MSWindowsKeyState;
 class MSWindowsScreenSaver;
 class Thread;
-class MSWindowsBrightness;
 class MSWindowsDropTarget;
 class MSWindowsTouchpad;
 
@@ -176,7 +175,6 @@ private: // HACK
   bool onMouseMove(int32_t x, int32_t y);
   bool onMouseWheel(int32_t xDelta, int32_t yDelta);
   void onTouchpadGesture(const TouchpadGesture &gesture);
-  void onBrightnessKey(KeyID key);
   bool onScreensaver(bool activated);
   bool onDisplayChange();
   void onClipboardChange();
@@ -336,9 +334,6 @@ private:
 
   // reads swipes from the touchpad, primary only
   std::unique_ptr<MSWindowsTouchpad> m_touchpad;
-
-  // turns the display's brightness keys into keys for clients, primary only
-  std::unique_ptr<MSWindowsBrightness> m_brightness;
 
   static MSWindowsComputer *s_computer;
 
