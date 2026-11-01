@@ -21,8 +21,8 @@
 /*!
 Windows doesn't see these keys as key presses, only the brightness they set,
 see BrightnessKeyTracker. The brightness comes from power setting messages to
-the window. Putting it back goes through WMI on a thread of its own, since a
-WMI call can take a while.
+the window. Putting it back goes through the power scheme on a thread of its
+own, since that and the WMI call for the levels can take a while.
 */
 class MSWindowsBrightness
 {
