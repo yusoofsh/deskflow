@@ -201,4 +201,15 @@ void KeyMapTests::parseKey_plusSymbol_parsesAsAsciiKey()
   QCOMPARE(key, static_cast<KeyID>('+'));
 }
 
+void KeyMapTests::parseKey_brightnessNames_parseAsBrightnessKeys()
+{
+  KeyID key = kKeyNone;
+
+  QVERIFY(KeyMap::parseKey("BrightnessUp", key));
+  QCOMPARE(key, kKeyBrightnessUp);
+  QVERIFY(KeyMap::parseKey("BrightnessDown", key));
+  QCOMPARE(key, kKeyBrightnessDown);
+  QCOMPARE(KeyMap::formatKey(kKeyBrightnessUp, 0), std::string("BrightnessUp"));
+}
+
 QTEST_MAIN(KeyMapTests)

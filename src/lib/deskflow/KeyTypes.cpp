@@ -25,6 +25,8 @@ const KeyNameMapEntry kKeyNameMap[] = {
     {"BackSpace", kKeyBackSpace},
     {"Begin", kKeyBegin},
     {"Break", kKeyBreak},
+    {"BrightnessDown", kKeyBrightnessDown},
+    {"BrightnessUp", kKeyBrightnessUp},
     {"Cancel", kKeyCancel},
     {"CapsLock", kKeyCapsLock},
     {"Clear", kKeyClear},
