@@ -26,6 +26,8 @@
 #include "common/VersionInfo.h"
 #include "gui/Messages.h"
 #include "gui/TlsUtility.h"
+#include "gui/audio/AudioSharing.h"
+#include "gui/audio/AudioWidget.h"
 #include "gui/core/CoreProcess.h"
 #include "gui/ipc/DaemonIpcClient.h"
 #include "gui/widgets/LogDock.h"
@@ -34,6 +36,7 @@
 
 #include <QCheckBox>
 #include <QCloseEvent>
+#include <QComboBox>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QLocalServer>
@@ -48,6 +51,7 @@
 #include <QRegularExpressionValidator>
 #include <QScreen>
 #include <QScrollBar>
+#include <QSignalBlocker>
 
 #include <memory>
 
@@ -63,6 +67,7 @@ MainWindow::MainWindow()
       m_trayIcon{new QSystemTrayIcon(this)},
       m_guiDupeChecker{new QLocalServer(this)},
       m_daemonIpcClient{new ipc::DaemonIpcClient(this)},
+      m_audioSharing{new audio::AudioSharing(this)},
       m_logDock{new LogDock(this)},
       m_statusBar{new StatusBar(this)},
       m_menuFile{new QMenu(this)},
@@ -130,6 +135,8 @@ MainWindow::MainWindow()
 
   createMenuBar();
   setupControls();
+  if (auto layout = qobject_cast<QBoxLayout *>(ui->topLevelWidget->layout()))
+    layout->insertWidget(layout->indexOf(ui->groupBox) + 1, new audio::AudioWidget(m_audioSharing, this));
   updateText();
   connectSlots();
   setupTrayIcon();
@@ -187,14 +194,26 @@ void MainWindow::restoreWindow()
     setGeometry(windowGeometry);
   }
   m_expandedSize = geometry().size();
+  updateWindowSizing();
 
   if (!totalGeometry.contains(windowGeometry)) {
     QRect screenGeometry = QGuiApplication::primaryScreen()->geometry();
     move(screenGeometry.center() - rect().center());
   }
+}
 
-  if (!Settings::value(Settings::Gui::LogExpanded).toBool())
-    setFixedSize(size());
+void MainWindow::updateWindowSizing()
+{
+  if (!Settings::value(Settings::Gui::LogExpanded).toBool() || m_logDock->isFloating()) {
+    layout()->setSizeConstraint(QLayout::SetFixedSize);
+  } else {
+    layout()->setSizeConstraint(QLayout::SetDefaultConstraint);
+    setMinimumSize(0, 0);
+    setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    resize(m_expandedSize);
+  }
+  // Callers read geometry() right after this, so apply the new size now instead of on the next layout request.
+  layout()->activate();
 }
 
 void MainWindow::setupControls()
@@ -281,16 +300,12 @@ void MainWindow::connectSlots()
   connect(&m_coreProcess, &CoreProcess::peerFingerprint, this, &MainWindow::handlePeerFingerprint);
   connect(&m_coreProcess, &CoreProcess::missingKeyboardLayouts, this, &MainWindow::handleMissingKeyboardLayouts);
 
-  if (Settings::value(Settings::Gui::AutoStartCore).toBool()) {
-    connect(ui->btnToggleCore, &QPushButton::clicked, m_actionStopCore, &QAction::trigger, Qt::UniqueConnection);
-  } else {
-    connect(ui->btnToggleCore, &QPushButton::clicked, m_actionStartCore, &QAction::trigger, Qt::UniqueConnection);
-  }
+  connect(ui->btnToggleCore, &QPushButton::clicked, m_actionStartCore, &QAction::trigger, Qt::UniqueConnection);
 
   connect(ui->btnRestartCore, &QPushButton::clicked, this, &MainWindow::resetCore);
 
-  connect(ui->lineHostname, &QLineEdit::returnPressed, ui->btnRestartCore, &QPushButton::click);
-  connect(ui->lineHostname, &QLineEdit::textChanged, this, &MainWindow::remoteHostChanged);
+  connect(ui->cbHostname->lineEdit(), &QLineEdit::returnPressed, ui->btnToggleCore, &QPushButton::click);
+  connect(ui->cbHostname, &QComboBox::editTextChanged, this, &MainWindow::remoteHostChanged);
 
   connect(ui->btnSaveServerConfig, &QPushButton::clicked, this, &MainWindow::saveServerConfig);
   connect(ui->btnConfigureServer, &QPushButton::clicked, this, [this] { showConfigureServer(""); });
@@ -324,25 +339,14 @@ void MainWindow::toggleLogVisible(bool visible)
     return;
   }
 
-  setFixedSize(16777215, 16777215);
   Settings::setValue(Settings::Gui::LogExpanded, visible);
-  if (visible) {
-    if (m_logDock->isFloating()) {
-      adjustSize();
-      setFixedSize(size());
-    } else {
-      QTimer::singleShot(15, this, [&] { resize(m_expandedSize); });
-    }
-  } else {
+  if (!visible) {
     if (!m_logDock->isFloating()) {
       m_expandedSize = geometry().size();
     }
     m_logDock->hide();
-    if (!m_logDock->isFloating()) {
-      adjustSize();
-    }
-    setFixedSize(size());
   }
+  updateWindowSizing();
   Settings::setValue(Settings::Gui::WindowGeometry, geometry());
 }
 
@@ -407,6 +411,18 @@ void MainWindow::coreProcessError(CoreProcess::Error error)
 
 void MainWindow::startCore()
 {
+  // No Mode Set
+  if (m_coreProcess.mode() == CoreMode::None) {
+    qDebug().noquote() << "skipping core start, no mode set";
+    return;
+  }
+
+  // Invalid client settings
+  if (m_coreProcess.mode() == CoreMode::Client && Settings::value(Settings::Client::RemoteHost).toString().isEmpty()) {
+    qDebug().noquote() << "skipping core start, undefined remotehost";
+    return;
+  }
+
   // Save current IP state when server starts
   if (m_coreProcess.mode() == CoreMode::Server && Settings::value(Settings::Core::Interface).toString().isEmpty()) {
     m_serverStartIPs = NetworkMonitor::validAddresses();
@@ -655,8 +671,6 @@ void MainWindow::open(bool startedAtLogin)
   }
 
   if (Settings::value(Settings::Gui::AutoStartCore).toBool()) {
-    if (ui->rbModeClient->isChecked() && ui->lineHostname->text().isEmpty())
-      return;
     startCore();
   }
 }
@@ -715,8 +729,12 @@ void MainWindow::applyConfig()
     setWindowTitle(kAppName);
   }
 
-  if (const auto host = Settings::value(Settings::Client::RemoteHost).toString(); !host.isEmpty())
-    ui->lineHostname->setText(host);
+  const auto host = Settings::value(Settings::Client::RemoteHost).toString();
+  QSignalBlocker hostnameBlocker(ui->cbHostname);
+  ui->cbHostname->clear();
+  ui->cbHostname->addItems(Settings::value(Settings::Client::RecentRemoteHosts).toStringList());
+  if (!host.isEmpty())
+    ui->cbHostname->setCurrentText(host);
 
   updateFingerprintButton();
   setTrayIcon();
@@ -736,8 +754,9 @@ void MainWindow::saveSettings() const
   } else if (ui->rbModeServer->isChecked()) {
     Settings::setValue(Settings::Core::CoreMode, Settings::CoreMode::Server);
   }
-  if (!ui->lineHostname->text().isEmpty())
-    Settings::setValue(Settings::Client::RemoteHost, ui->lineHostname->text());
+  if (!ui->cbHostname->currentText().isEmpty()) {
+    Settings::setValue(Settings::Client::RemoteHost, ui->cbHostname->currentText());
+  }
   Settings::save();
 }
 
@@ -960,6 +979,7 @@ void MainWindow::coreProcessStateChanged(ProcessState state)
 {
   using enum ProcessState;
   updateStatus();
+  m_audioSharing->setCoreRunning(state == Started || state == Starting || state == RetryPending);
   if (state == Started) {
     qDebug() << "recording that core has started";
     Settings::setValue(Settings::Gui::AutoStartCore, true);
@@ -1007,8 +1027,27 @@ void MainWindow::coreConnectionStateChanged(ConnectionState state)
   // when the correct TLS version string is detected.
   if (state != ConnectionState::Connected) {
     secureSocket(false);
-  } else if (isVisible()) {
-    showFirstConnectedMessage();
+  } else {
+    if (m_coreProcess.mode() == CoreMode::Client) {
+      if (const auto host = ui->cbHostname->currentText(); !host.isEmpty()) {
+        QStringList recentHosts = Settings::value(Settings::Client::RecentRemoteHosts).toStringList();
+        if (recentHosts.isEmpty() || recentHosts.first() != host) {
+          recentHosts.removeAll(host);
+          recentHosts.prepend(host);
+          while (recentHosts.size() > 10) {
+            recentHosts.removeLast();
+          }
+          Settings::setValue(Settings::Client::RecentRemoteHosts, recentHosts);
+          QSignalBlocker hostnameBlocker(ui->cbHostname);
+          ui->cbHostname->clear();
+          ui->cbHostname->addItems(recentHosts);
+          ui->cbHostname->setCurrentText(host);
+        }
+      }
+    }
+    if (isVisible()) {
+      showFirstConnectedMessage();
+    }
   }
 }
 
@@ -1106,8 +1145,11 @@ void MainWindow::showConfigureServer(const QString &message)
 void MainWindow::showConfigureClient()
 {
   ClientConfigDialog dialog(this);
-  if ((dialog.exec() == QDialog::Accepted) && m_coreProcess.isStarted()) {
-    m_coreProcess.restart();
+  if (dialog.exec() == QDialog::Accepted) {
+    applyConfig();
+    if (m_coreProcess.isStarted()) {
+      m_coreProcess.restart();
+    }
   }
 }
 
@@ -1337,5 +1379,5 @@ bool MainWindow::canRunCore() const
   const auto mode = m_coreProcess.mode();
   const bool isServer = mode == Settings::CoreMode::Server;
   const bool isClient = mode == Settings::CoreMode::Client;
-  return ((isServer || isClient) && (isClient && !ui->lineHostname->text().isEmpty()) || isServer);
+  return ((isServer || isClient) && (isClient && !ui->cbHostname->currentText().isEmpty()) || isServer);
 }

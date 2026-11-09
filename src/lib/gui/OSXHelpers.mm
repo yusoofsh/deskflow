@@ -7,6 +7,7 @@
 #import "OSXHelpers.h"
 
 #import <Cocoa/Cocoa.h>
+#import <CoreAudio/CoreAudio.h>
 #import <CoreData/CoreData.h>
 #import <Foundation/Foundation.h>
 #import <ServiceManagement/ServiceManagement.h>
@@ -17,6 +18,8 @@
 #import <objc/runtime.h>
 
 #import <QtGlobal>
+
+#include <vector>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
@@ -239,4 +242,115 @@ void installReopenHandler(std::function<void()> onReopen)
     const auto types = protocol_getMethodDescription(@protocol(NSApplicationDelegate), selector, NO, YES).types;
     class_addMethod(cls, selector, (IMP)deskflow_applicationShouldHandleReopen, types);
   }
+}
+
+namespace {
+QString macAudioDeviceName(AudioObjectID device)
+{
+  AudioObjectPropertyAddress address{
+      kAudioObjectPropertyName, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  CFStringRef name = nullptr;
+  UInt32 size = sizeof(name);
+  if (AudioObjectGetPropertyData(device, &address, 0, nullptr, &size, &name) != noErr || !name)
+    return {};
+  const auto result = QString::fromCFString(name);
+  CFRelease(name);
+  return result;
+}
+
+bool macAudioDeviceHasStreams(AudioObjectID device, bool input)
+{
+  AudioObjectPropertyAddress address{
+      kAudioDevicePropertyStreams, input ? kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeOutput,
+      kAudioObjectPropertyElementMain
+  };
+  UInt32 size = 0;
+  return AudioObjectGetPropertyDataSize(device, &address, 0, nullptr, &size) == noErr && size > 0;
+}
+
+AudioObjectPropertyAddress macDefaultDeviceAddress(bool input)
+{
+  return {
+      input ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice,
+      kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+}
+
+AudioObjectID macAudioDeviceForUid(const QString &uid)
+{
+  AudioObjectPropertyAddress address{
+      kAudioHardwarePropertyTranslateUIDToDevice, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  CFStringRef uidString = uid.toCFString();
+  AudioObjectID device = kAudioObjectUnknown;
+  UInt32 size = sizeof(device);
+  const auto status =
+      AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, sizeof(uidString), &uidString, &size, &device);
+  CFRelease(uidString);
+  return status == noErr ? device : kAudioObjectUnknown;
+}
+} // namespace
+
+QString macDefaultAudioDevice(bool input)
+{
+  auto address = macDefaultDeviceAddress(input);
+  AudioObjectID device = kAudioObjectUnknown;
+  UInt32 size = sizeof(device);
+  if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, nullptr, &size, &device) != noErr)
+    return {};
+  return macAudioDeviceName(device);
+}
+
+bool macSetDefaultAudioDevice(bool input, const QString &name)
+{
+  AudioObjectPropertyAddress address{
+      kAudioHardwarePropertyDevices, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  UInt32 size = 0;
+  if (AudioObjectGetPropertyDataSize(kAudioObjectSystemObject, &address, 0, nullptr, &size) != noErr)
+    return false;
+  std::vector<AudioObjectID> devices(size / sizeof(AudioObjectID));
+  if (AudioObjectGetPropertyData(kAudioObjectSystemObject, &address, 0, nullptr, &size, devices.data()) != noErr)
+    return false;
+
+  for (const auto device : devices) {
+    if (macAudioDeviceName(device) != name || !macAudioDeviceHasStreams(device, input))
+      continue;
+    auto target = macDefaultDeviceAddress(input);
+    return AudioObjectSetPropertyData(kAudioObjectSystemObject, &target, 0, nullptr, sizeof(device), &device) == noErr;
+  }
+  return false;
+}
+
+bool macAudioDeviceExists(const QString &uid)
+{
+  return macAudioDeviceForUid(uid) != kAudioObjectUnknown;
+}
+
+bool macAudioDeviceHidden(const QString &uid)
+{
+  const auto device = macAudioDeviceForUid(uid);
+  AudioObjectPropertyAddress address{
+      kAudioDevicePropertyIsHidden, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain
+  };
+  UInt32 hidden = 0;
+  UInt32 size = sizeof(hidden);
+  return device != kAudioObjectUnknown &&
+         AudioObjectGetPropertyData(device, &address, 0, nullptr, &size, &hidden) == noErr && hidden != 0;
+}
+
+bool macCreatePrivateAudioDevice(const QString &uid, const QString &name, const QString &hiddenUid)
+{
+  NSDictionary *description = @{
+    @kAudioAggregateDeviceUIDKey : uid.toNSString(),
+    @kAudioAggregateDeviceNameKey : name.toNSString(),
+    @kAudioAggregateDeviceIsPrivateKey : @YES,
+    @kAudioAggregateDeviceMainSubDeviceKey : hiddenUid.toNSString(),
+    @kAudioAggregateDeviceSubDeviceListKey : @[
+      @{@kAudioSubDeviceUIDKey : hiddenUid.toNSString()}
+    ],
+  };
+  AudioObjectID device = kAudioObjectUnknown;
+  return AudioHardwareCreateAggregateDevice((__bridge CFDictionaryRef)description, &device) == noErr;
 }

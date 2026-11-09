@@ -173,6 +173,10 @@ p, li { white-space: pre-wrap; }
         <source>Use dynamic reconnection time based on connection attempts</source>
         <translation type="unfinished">연결 시도 횟수에 따라 동적 재연결 시간을 사용합니다</translation>
     </message>
+    <message>
+        <source>Clear Server History</source>
+        <translation type="unfinished">서버 기록 지우기</translation>
+    </message>
 </context>
 <context>
     <name>ComputerSettingsDialog</name>
@@ -1399,6 +1403,124 @@ The file sets how computers connect. Computer settings and hotkeys from this dia
     <message>
         <source>Encryption Disabled</source>
         <translation>암호화 사용 안 함</translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::audio::AudioEngine</name>
+    <message>
+        <source>No audio input device selected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Could not open %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::audio::AudioLink</name>
+    <message>
+        <source>Audio could not listen on port %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for computers on port %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio refused: server fingerprint is not trusted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reconnecting to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio cannot reach %1: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio cannot reach %1: no answer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::audio::AudioSharing</name>
+    <message numerus="yes">
+        <source>Sharing audio with %n computer(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Audio sharing is off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Audio starts when Deskflow starts</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>deskflow::gui::audio::AudioWidget</name>
+    <message>
+        <source>Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Share audio:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Capture sound from:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install BlackHole Loopback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Installing BlackHole Loopback...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>BlackHole Loopback was not installed: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Uses BlackHole Loopback for this Mac&apos;s sound and microphone.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use this computer&apos;s audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use another computer&apos;s audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Microphone:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Microphone appears as:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Speaker:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

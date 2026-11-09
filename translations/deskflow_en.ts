@@ -12,4 +12,14 @@
         </translation>
     </message>
 </context>
+<context>
+    <name>deskflow::gui::audio::AudioSharing</name>
+    <message numerus="yes">
+        <source>Sharing audio with %n computer(s)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+</context>
 </TS>

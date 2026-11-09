@@ -41,6 +41,10 @@ namespace deskflow::gui::ipc {
 class DaemonIpcClient;
 }
 
+namespace deskflow::gui::audio {
+class AudioSharing;
+}
+
 class MainWindow : public QMainWindow
 {
   using ConnectionState = deskflow::core::ConnectionState;
@@ -131,6 +135,7 @@ private:
   void showConfigureServer(const QString &message);
   void showConfigureClient();
   void restoreWindow();
+  void updateWindowSizing();
   void setupControls();
   void showFirstConnectedMessage();
   void updateStatus();
@@ -182,6 +187,7 @@ private:
   QSystemTrayIcon *m_trayIcon = nullptr;
   QLocalServer *m_guiDupeChecker = nullptr;
   deskflow::gui::ipc::DaemonIpcClient *m_daemonIpcClient = nullptr;
+  deskflow::gui::audio::AudioSharing *m_audioSharing = nullptr;
 
   LogDock *m_logDock;
   StatusBar *m_statusBar = nullptr;

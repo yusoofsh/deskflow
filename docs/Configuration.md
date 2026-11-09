@@ -44,6 +44,27 @@ Option-value pairs are only written if the value is not the default value.
 option=value
 ```
 
+### Audio
+
+This section contains the shared audio options, it will begin with `[audio]`.
+Audio runs while the core runs, on the core port + 1. The server routes it; clients connect to the server.
+
+| Option         | Valid Values  | Description |
+|:---------------|:-------------:|:-----------|
+| role           | `0`, `1`, `2` | `0` off, `1` use this computer's audio (plays the others' sound, sends its microphone), `2` use another computer's audio (sends this computer's sound there and receives its microphone) [default: 0] |
+| captureDevice  | Device id     | Input to capture: the microphone for role `1`, the loopback device (`Deskflow Sound Capture` on macOS) for role `2` |
+| playbackDevice | Device id     | Output to play to: the speaker for role `1`, the virtual microphone device (`Deskflow Mic Feed` on macOS) for role `2` |
+
+On macOS, role `2` uses BlackHole Loopback and hides the device choices.
+To install it, click **Install BlackHole Loopback** in the Audio section and enter your password once.
+The Sound menu then shows one **BlackHole Loopback** output and one **BlackHole Loopback** input.
+Deskflow switches the Mac to both while sharing and switches back when it stops.
+
+BlackHole Loopback is two drivers built from [BlackHole](https://github.com/ExistentialAudio/BlackHole) 0.7.2
+by `deploy/mac/build-blackhole-loopback.sh` and shipped inside `Deskflow.app`.
+Each driver also has a hidden mirror device that Deskflow reads or writes and that no other app lists.
+Two drivers keep the shared microphone from mixing into the captured Mac sound.
+
 ### Client
 
 This section contains options used when in client mode. 
@@ -86,7 +107,6 @@ This section contains options used by the daemon on windows it will begin with `
 
 |Option | Valid Values|Description|
 |:----------|:-----------:|:-----------|
-| command   | Filename          | The filename of the binary the daemon. This binary exists in the same path as the deskflow GUI |
 | elevate   | `true` or `false` | Elevate the daemon app [default: true unless portable mode ] |
 | logFile   | Filepath          | Filepath of the daemon log |
 | logLevel  | valid log Level,  | Log Level  |

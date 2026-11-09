@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: (C) 2025 Deskflow Developers
 # SPDX-License-Identifier: MIT
 
+add_subdirectory(audio)
 add_subdirectory(config)
 add_subdirectory(core)
 

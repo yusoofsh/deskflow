@@ -13,10 +13,10 @@
 #include "deskflow/MouseTypes.h"
 #include "deskflow/TouchpadGesture.h"
 
-//! Secondary comptuer interface
+//! Secondary computer interface
 /*!
 This interface defines the methods common to all platform dependent
-secondary comptuer implementations.
+secondary computer implementations.
 */
 class ISecondaryComputer
 {
