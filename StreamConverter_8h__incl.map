@@ -1,0 +1,15 @@
+<map id="src/lib/gui/audio/StreamConverter.h" name="src/lib/gui/audio/StreamConverter.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="135,5,293,44"/>
+<area shape="rect" id="Node000002" href="$AudioProtocol_8h.html" title=" " alt="" coords="111,92,224,117"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="205,43,184,80,180,77,201,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,165,111,189"/>
+<area shape="poly" id="edge5_Node000001_Node000003" title=" " alt="" coords="166,46,134,67,101,94,82,122,69,151,64,148,77,119,97,90,131,63,170,43"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="224,165,313,189"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="222,42,262,150,257,150,219,46"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="300,92,350,117"/>
+<area shape="poly" id="edge7_Node000001_Node000006" title=" " alt="" coords="241,42,298,83,293,83,240,47"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="152,117,90,158,87,154,147,118"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="185,115,242,156,237,156,183,120"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="134,165,200,189"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="169,115,170,150,165,148,165,119"/>
+</map>

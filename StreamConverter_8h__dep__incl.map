@@ -1,0 +1,17 @@
+<map id="src/lib/gui/audio/StreamConverter.h" name="src/lib/gui/audio/StreamConverter.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="251,5,409,44"/>
+<area shape="rect" id="Node000002" href="$AudioEngine_8h.html" title=" " alt="" coords="128,99,329,124"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="298,52,244,100,241,96,294,56"/>
+<area shape="rect" id="Node000008" href="$StreamConverter_8cpp.html" title=" " alt="" coords="353,92,512,131"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="365,51,412,91,407,91,364,57"/>
+<area shape="rect" id="Node000003" href="$AudioEngine_8cpp.html" title=" " alt="" coords="5,179,220,203"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="197,134,132,180,129,176,201,131"/>
+<area shape="rect" id="Node000004" href="$AudioSharing_8h.html" title=" " alt="" coords="244,179,448,203"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="259,130,331,178,325,178,258,135"/>
+<area shape="rect" id="Node000005" href="$MainWindow_8cpp.html" title=" " alt="" coords="32,251,212,276"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="297,209,160,253,158,248,292,208"/>
+<area shape="rect" id="Node000006" href="$AudioSharing_8cpp.html" title=" " alt="" coords="237,251,455,276"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="348,217,348,253,344,249,344,221"/>
+<area shape="rect" id="Node000007" href="$AudioWidget_8cpp.html" title=" " alt="" coords="479,251,693,276"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="400,205,549,251,543,251,399,211"/>
+</map>

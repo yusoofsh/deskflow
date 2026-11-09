@@ -1,0 +1,9 @@
+<map id="src/lib/gui/audio/AudioProtocol.h" name="src/lib/gui/audio/AudioProtocol.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="75,5,284,30"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,78,111,103"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="162,30,92,72,89,68,157,31"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="135,78,224,103"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="181,29,182,64,177,61,177,32"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="248,78,314,103"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="197,28,254,69,249,69,195,33"/>
+</map>

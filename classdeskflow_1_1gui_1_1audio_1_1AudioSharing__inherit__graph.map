@@ -1,0 +1,5 @@
+<map id="deskflow::gui::audio::AudioSharing" name="deskflow::gui::audio::AudioSharing">
+<area shape="rect" id="Node000001" title="Runs shared audio while the Deskflow core runs, using the role and devices from Settings." alt="" coords="5,78,142,117"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="39,5,108,30"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="75,44,76,78,71,77,72,48"/>
+</map>
